@@ -168,10 +168,9 @@ int main() {
     double u[3] = {5.0, 2.0, 8.0};
 
     // Build the problem
-    lp_problem_t* prob = create_lp_problem(
-        &A_desc, c, NULL, NULL, NULL, l, u);
+    lp_problem_t* prob = create_lp_problem(c, &A_desc, l, u, NULL, NULL, NULL);
 
-    // Solve (NULL → use default parameters)
+    // Solve (NULL -> use default parameters)
     cupdlpx_result_t* res = solve_lp_problem(prob, NULL);
 
     printf("Termination reason: %d\n", res->termination_reason);
