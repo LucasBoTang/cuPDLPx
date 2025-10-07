@@ -18,9 +18,7 @@ endif()
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# Optional: choose CUDA architectures (adjust as needed)
-# e.g., 80=Ampere A100, 86=RTX30, 89=Hopper H100 (SM90=90)
-set(CMAKE_CUDA_ARCHITECTURES 75;80;86;89;90;90-virtual)
+set(CMAKE_CUDA_ARCHITECTURES "all")
 
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED)
