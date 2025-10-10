@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import annotations
+import warnings
 from typing import Any, Optional, Union
 
 import numpy as np
@@ -296,15 +297,32 @@ class Model:
             if primal_arr.size == self.num_vars:  # otherwise default to None
                 self._primal_start = primal_arr
             else:
-                print("warning: warm start primal size mismatch, ignoring.")
-            
-        # set dual warm start  
+                warnings.warn(
+                    f"Warm start primal size mismatch (expected {self.num_vars}, got {primal_arr.size}).",
+                    RuntimeWarning
+                )
+        # clear primal warm start
+        else:
+            self._primal_start = None
+        # set dual warm start
         if dual is not None:
             dual_arr = _as_dense_f64_c(dual).ravel()          
             if dual_arr.size == self.num_constrs:  # otherwise default to None
                 self._dual_start = dual_arr
             else:
-                print("warning: warm start dual size mismatch, ignoring.")
+                warnings.warn(
+                    f"Warm start dual size mismatch (expected {self.num_constrs}, got {dual_arr.size}).",
+                    RuntimeWarning
+                )
+        # clear dual warm start
+        else:
+            self._dual_start = None
+
+    def clearWarmStart(self) -> None:
+        """
+        Clear any existing warm start values.
+        """
+        self.setWarmStart(primal=None, dual=None)
 
     def setParam(self, name: str, value: Any) -> None:
         """
