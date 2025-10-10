@@ -11,12 +11,9 @@ BUILD_DIR = ./build
 CFLAGS = -I. -I$(CUDA_HOME)/include -fPIC -O3 -Wall -Wextra -g
 
 # NVCCFLAGS for CUDA compiler (nvcc)
+GPU_ARCH := $(shell nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -n 1 | sed 's/\.//')
 NVCCFLAGS = -I. -I$(CUDA_HOME)/include -O3 -g \
-            -gencode arch=compute_75,code=sm_75 \
-	          -gencode arch=compute_80,code=sm_80 \
-            -gencode arch=compute_86,code=sm_86 \
-            -gencode arch=compute_80,code=sm_89 \
-            -gencode arch=compute_90,code=sm_90 \
+            -gencode arch=compute_$(GPU_ARCH),code=sm_$(GPU_ARCH) \
             -Xcompiler -fPIC  -Xcompiler -gdwarf-4 -ccbin $(SYSTEM_GXX)
 
 # LDFLAGS for the linker
