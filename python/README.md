@@ -214,3 +214,44 @@ print("Dual solution:", m.Pi)
 print("Primal residual:", m.RelPrimalResidual)
 print("Dual residual:", m.RelDualResidual)
 ```
+
+## Warm Start
+
+`cupdlpx` supports warm starting from user-provided primal and/or dual solutions.
+This allows resuming from a previous iterate or reusing solutions from a related instance, often reducing iterations needed to reach optimality.
+
+```python
+# Warm starting solution
+x_init = [1.0, 2.0]
+pi_init = [1.0, -1.0, 0.0]
+
+# Set warm start
+m.setWarmStart(primal=x_init, dual=pi_init)
+
+# Solve
+m.optimize()
+```
+
+Both primal and dual arguments are optional. You may specify only one of them if desired:
+
+```python
+# Only provide primal start
+m.setWarmStart(primal=x_init)
+
+# Only provide dual start
+m.setWarmStart(dual=pi_init)
+```
+
+If the warm-start vectors have incorrect dimensions, the solver automatically falls back to a cold start and issues a warning.
+
+To clear existing warm-start values:
+
+```python
+m.clearWarmStart()
+```
+
+or
+
+```python
+m.setWarmStart(primal=None, dual=None)
+```
