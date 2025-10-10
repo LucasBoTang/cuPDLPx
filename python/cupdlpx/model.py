@@ -299,6 +299,7 @@ class Model:
             else:
                 warnings.warn(
                     f"Warm start primal size mismatch (expected {self.num_vars}, got {primal_arr.size}).",
+                    RuntimeWarning
                 )
         # clear primal warm start
         else:
@@ -310,7 +311,8 @@ class Model:
                 self._dual_start = dual_arr
             else:
                 warnings.warn(
-                    f"Warm start dual size mismatch (expected {self.num_constrs}, got {dual_arr.size})."
+                    f"Warm start dual size mismatch (expected {self.num_constrs}, got {dual_arr.size}).",
+                    RuntimeWarning
                 )
         # clear dual warm start
         else:
