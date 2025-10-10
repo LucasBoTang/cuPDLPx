@@ -298,9 +298,11 @@ class Model:
                 self._primal_start = primal_arr
             else:
                 warnings.warn(
-                    f"Warm start primal size mismatch (expected {self.num_vars}, got {primal_arr.size})."
+                    f"Warm start primal size mismatch (expected {self.num_vars}, got {primal_arr.size}).",
                 )
-
+        # clear primal warm start
+        else:
+            self._primal_start = None
         # set dual warm start
         if dual is not None:
             dual_arr = _as_dense_f64_c(dual).ravel()          
@@ -310,6 +312,15 @@ class Model:
                 warnings.warn(
                     f"Warm start dual size mismatch (expected {self.num_constrs}, got {dual_arr.size})."
                 )
+        # clear dual warm start
+        else:
+            self._dual_start = None
+
+    def clearWarmStart(self) -> None:
+        """
+        Clear any existing warm start values.
+        """
+        self.setWarmStart(primal=None, dual=None)
 
     def setParam(self, name: str, value: Any) -> None:
         """
