@@ -24,24 +24,10 @@ limitations under the License.
 
 #define SCALING_EPSILON 1e-12
 
-void lp_problem_free(lp_problem_t *L)
-{
-    if (!L)
-        return;
-    free(L->constraint_matrix_row_pointers);
-    free(L->constraint_matrix_col_indices);
-    free(L->constraint_matrix_values);
-    free(L->variable_lower_bound);
-    free(L->variable_upper_bound);
-    free(L->objective_vector);
-    free(L->constraint_lower_bound);
-    free(L->constraint_upper_bound);
-    free(L->primal_start);
-    free(L->dual_start);
-    memset(L, 0, sizeof(*L));
-    free(L);
-}
-
+static lp_problem_t *deepcopy_problem(const lp_problem_t *prob);
+static void scale_problem(lp_problem_t *problem, const double *con_rescale, const double *var_rescale);
+static void ruiz_rescaling(lp_problem_t *problem, int num_iters, double *cum_con_rescale, double *cum_var_rescale);
+static void pock_chambolle_rescaling(lp_problem_t *problem, double alpha, double *cum_con_rescale, double *cum_var_rescale);
 
 static lp_problem_t *deepcopy_problem(const lp_problem_t *prob)
 {

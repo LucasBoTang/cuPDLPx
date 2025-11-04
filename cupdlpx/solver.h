@@ -36,6 +36,10 @@ extern "C"
 
     void set_default_parameters(pdhg_parameters_t *params);
 
+    void lp_problem_free(lp_problem_t *prob);
+
+    void cupdlpx_result_free(cupdlpx_result_t *results);
+
 #ifdef __cplusplus
 }
 #endif

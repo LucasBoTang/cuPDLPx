@@ -64,6 +64,7 @@ static pdhg_solver_state_t *initialize_solver_state(
     const lp_problem_t *original_problem,
     const rescale_info_t *rescale_info);
 static void compute_fixed_point_error(pdhg_solver_state_t *state);
+void lp_problem_free(lp_problem_t *prob);
 void pdhg_solver_state_free(pdhg_solver_state_t *state);
 void rescale_info_free(rescale_info_t *info);
 
@@ -704,6 +705,24 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->ones_dual_d));
 
     free(state);
+}
+
+void lp_problem_free(lp_problem_t *prob)
+{
+    if (!prob)
+        return;
+    free(prob->constraint_matrix_row_pointers);
+    free(prob->constraint_matrix_col_indices);
+    free(prob->constraint_matrix_values);
+    free(prob->variable_lower_bound);
+    free(prob->variable_upper_bound);
+    free(prob->objective_vector);
+    free(prob->constraint_lower_bound);
+    free(prob->constraint_upper_bound);
+    free(prob->primal_start);
+    free(prob->dual_start);
+    memset(prob, 0, sizeof(*prob));
+    free(prob);
 }
 
 void rescale_info_free(rescale_info_t *info)
