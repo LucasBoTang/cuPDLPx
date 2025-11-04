@@ -912,6 +912,7 @@ void lp_problem_free(lp_problem_t *L)
     free(L->primal_start);
     free(L->dual_start);
     memset(L, 0, sizeof(*L));
+    free(L);
 }
 
 static lp_problem_t *deepcopy_problem(const lp_problem_t *prob)
