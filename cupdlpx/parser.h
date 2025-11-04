@@ -17,7 +17,5 @@ limitations under the License.
 #pragma once
 
 #include "struct.h"
-#include "utils.h"
-#include "parser.h"
-#include "preconditioner.h"
-#include "solver.h"
+
+lp_problem_t *read_mps_file(const char *filename);

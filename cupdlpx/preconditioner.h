@@ -16,11 +16,7 @@ limitations under the License.
 
 #pragma once
 
-#include "struct.h"
-#include "utils.h"
-#include <stdbool.h>
-
-lp_problem_t *read_mps_file(const char *filename);
+#include "struct.h" 
 
 #ifdef __cplusplus
 extern "C"

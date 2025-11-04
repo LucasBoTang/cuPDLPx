@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "struct.h"
 #include "utils.h"
-#include "io.h"
+#include "preconditioner.h"
 #include <cuda_runtime.h>
 #include <cusparse.h>
 #include <cublas_v2.h>
