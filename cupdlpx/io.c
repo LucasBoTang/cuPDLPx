@@ -385,7 +385,7 @@ static int parse_columns_section(MpsParserState *state, char **tokens, int n_tok
 static int parse_rhs_section(MpsParserState *state, char **tokens, int n_tokens);
 static int parse_ranges_section(MpsParserState *state, char **tokens, int n_tokens);
 static int parse_bounds_section(MpsParserState *state, char **tokens, int n_tokens);
-static int coo_to_csr(lp_problem_t *prob, CooMatrix *coo, size_t num_constraints);
+static int mps_coo_to_csr(lp_problem_t *prob, CooMatrix *coo, size_t num_constraints);
 void lp_problem_free(lp_problem_t *L);
 static lp_problem_t *deepcopy_problem(const lp_problem_t *prob);
 static void scale_problem(lp_problem_t *problem, const double *con_rescale, const double *var_rescale);
@@ -546,7 +546,7 @@ lp_problem_t *read_mps_file(const char *filename)
         }
     }
 
-    if (coo_to_csr(prob, &state.coo_matrix, prob->num_constraints) != 0)
+    if (mps_coo_to_csr(prob, &state.coo_matrix, prob->num_constraints) != 0)
     {
         fprintf(stderr, "ERROR: Failed to convert matrix to CSR format.\n");
         lp_problem_free(prob);
@@ -831,7 +831,7 @@ static int parse_bounds_section(MpsParserState *state, char **tokens, int n_toke
     return 0;
 }
 
-static int coo_to_csr(lp_problem_t *prob, CooMatrix *coo, size_t num_constraints)
+static int mps_coo_to_csr(lp_problem_t *prob, CooMatrix *coo, size_t num_constraints)
 {
 
     prob->constraint_matrix_row_pointers = safe_calloc(num_constraints + 1, sizeof(int));
