@@ -18,6 +18,6 @@ limitations under the License.
 
 #include "struct.h"
 #include "utils.h"
-#include "parser.h"
+#include "mps_parser.h"
 #include "preconditioner.h"
 #include "solver.h"
