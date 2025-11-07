@@ -32,8 +32,6 @@ extern "C"
         const pdhg_parameters_t *params,
         const lp_problem_t *original_problem);
 
-    void cupdlpx_result_free(cupdlpx_result_t *results);
-
     void set_default_parameters(pdhg_parameters_t *params);
 
     void lp_problem_free(lp_problem_t *prob);

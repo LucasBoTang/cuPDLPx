@@ -16,6 +16,7 @@ limitations under the License.
 
 #include "mps_parser.h"
 #include "utils.h"
+#include "solver.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
