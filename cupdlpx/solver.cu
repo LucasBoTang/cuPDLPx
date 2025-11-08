@@ -58,12 +58,13 @@ static void compute_next_pdhg_dual_solution(pdhg_solver_state_t *state);
 static void halpern_update(pdhg_solver_state_t *state, double reflection_coefficient);
 static void rescale_solution(pdhg_solver_state_t *state);
 static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state);
-static void perform_restart(pdhg_solver_state_t *state, const pdhg_parameters_t *cudaMemsetParams);
+static void perform_restart(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
 static void initialize_step_size_and_primal_weight(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
 static pdhg_solver_state_t *initialize_solver_state(
     const lp_problem_t *original_problem,
     const rescale_info_t *rescale_info);
 static void compute_fixed_point_error(pdhg_solver_state_t *state);
+void lp_problem_free(lp_problem_t *prob);
 void pdhg_solver_state_free(pdhg_solver_state_t *state);
 void rescale_info_free(rescale_info_t *info);
 
@@ -285,7 +286,6 @@ static pdhg_solver_state_t *initialize_solver_state(
     state->num_blocks_dual = (state->num_constraints + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     state->num_blocks_primal_dual = (state->num_variables + state->num_constraints + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
 
-    state->best_primal_dual_residual_gap = INFINITY;
     state->best_primal_dual_residual_gap = INFINITY;
     state->last_trial_fixed_point_error = INFINITY;
     state->step_size = 0.0;
@@ -705,6 +705,24 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->ones_dual_d));
 
     free(state);
+}
+
+void lp_problem_free(lp_problem_t *prob)
+{
+    if (!prob)
+        return;
+    free(prob->constraint_matrix_row_pointers);
+    free(prob->constraint_matrix_col_indices);
+    free(prob->constraint_matrix_values);
+    free(prob->variable_lower_bound);
+    free(prob->variable_upper_bound);
+    free(prob->objective_vector);
+    free(prob->constraint_lower_bound);
+    free(prob->constraint_upper_bound);
+    free(prob->primal_start);
+    free(prob->dual_start);
+    memset(prob, 0, sizeof(*prob));
+    free(prob);
 }
 
 void rescale_info_free(rescale_info_t *info)
