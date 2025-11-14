@@ -27,6 +27,7 @@ sdist.include = ["tests/**", "pyproject.toml", "README.md", "LICENSE"]
 [tool.scikit-build.cmake.define]
 CMAKE_CUDA_ARCHITECTURES = "75;80;86;89;90;90-virtual"
 CMAKE_CUDA_STANDARD = "17"
+CUPDLPX_BUILD_PYTHON = "ON"
 
 [project.optional-dependencies]
 test = [
