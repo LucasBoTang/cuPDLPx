@@ -20,7 +20,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Increase compatibility by compiling for all supported real and virtual architectures.
-set(CMAKE_CUDA_ARCHITECTURES all)
+set(CMAKE_CUDA_ARCHITECTURES 60 70 75 80 86 89 90)
 
 # Global Compile flags (corresponding to CFLAGS/NVCCFLAGS)
 add_compile_options(-fPIC -O3 -Wall -Wextra -g)
