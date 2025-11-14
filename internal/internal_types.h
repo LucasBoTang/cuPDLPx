@@ -28,6 +28,7 @@ typedef struct
 	int num_nonzeros;
 	int *row_ptr;
 	int *col_ind;
+	int *row_ind;
 	double *val;
 } cu_sparse_matrix_csr_t;
 
@@ -46,6 +47,7 @@ typedef struct
 	int num_blocks_primal;
 	int num_blocks_dual;
 	int num_blocks_primal_dual;
+	int num_blocks_nnz;
 	double objective_vector_norm;
 	double constraint_bound_norm;
 	double *constraint_lower_bound_finite_val;
@@ -74,8 +76,6 @@ typedef struct
 
 	double *constraint_rescaling;
 	double *variable_rescaling;
-	double constraint_bound_rescaling;
-	double objective_vector_rescaling;
 	double *primal_slack;
 	double *dual_slack;
 	double rescaling_time_sec;
@@ -129,10 +129,7 @@ typedef struct
 
 typedef struct
 {
-	lp_problem_t *scaled_problem;
 	double *con_rescale;
 	double *var_rescale;
-	double con_bound_rescale;
-	double obj_vec_rescale;
 	double rescaling_time_sec;
 } rescale_info_t;
