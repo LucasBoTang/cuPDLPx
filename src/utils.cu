@@ -950,18 +950,3 @@ int coo_to_csr(const matrix_desc_t *desc, int **row_ptr, int **col_ind,
     return 0;
 }
 
-int* build_row_ind_from_row_ptr(int* row_ptr, int num_rows, int nnz)
-{
-    if (!row_ptr || num_rows < 0 || nnz <= 0) return NULL;
-
-    int* row_ind = (int*)safe_malloc(nnz * sizeof(int));
-    for (int i = 0; i < num_rows; ++i) {
-        int s = row_ptr[i];
-        int e = row_ptr[i + 1];
-        for (int k = s; k < e; ++k) {
-            row_ind[k] = i;
-        }
-    }
-    return row_ind;
-}
-

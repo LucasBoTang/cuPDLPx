@@ -125,8 +125,6 @@ extern "C"
     int coo_to_csr(const matrix_desc_t *desc,
                    int **row_ptr, int **col_ind, double **vals, int *nnz_out);
 
-    int* build_row_ind_from_row_ptr(int* row_ptr, int num_rows, int nnz);
-
 #ifdef __cplusplus
 }
 
