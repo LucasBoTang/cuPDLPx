@@ -28,6 +28,15 @@ limitations under the License.
 #include <stdio.h>
 #include <time.h>
 
+__global__ void build_row_ind(const int* __restrict__ row_ptr,
+                              int num_rows,
+                              int* __restrict__ row_ind);
+__global__ void build_transpose_pos(const int* __restrict__ A_row_ind,
+                                    const int* __restrict__ A_col_ind,
+                                    const int* __restrict__ At_row_ptr,
+                                    const int* __restrict__ At_col_ind,
+                                    int nnz,
+                                    int* __restrict__ A_to_At);
 __global__ void compute_next_pdhg_primal_solution_kernel(
     const double *current_primal, double *reflected_primal, const double *dual_product,
     const double *objective, const double *var_lb, const double *var_ub,
@@ -250,9 +259,49 @@ static pdhg_solver_state_t *initialize_solver_state(
     ALLOC_AND_COPY(state->constraint_matrix->col_ind, working_problem->constraint_matrix_col_indices, working_problem->constraint_matrix_num_nonzeros * sizeof(int));
     ALLOC_AND_COPY(state->constraint_matrix->val, working_problem->constraint_matrix_values, working_problem->constraint_matrix_num_nonzeros * sizeof(double));
 
-    int* h_row_ind = build_row_ind_from_row_ptr(working_problem->constraint_matrix_row_pointers, n_cons, nnz);
-    ALLOC_AND_COPY(state->constraint_matrix->row_ind, h_row_ind, nnz * sizeof(int));
-    free(h_row_ind);
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix->row_ind, nnz * sizeof(int)));
+    build_row_ind<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->constraint_matrix->row_ptr, n_cons, state->constraint_matrix->row_ind);
+    CUDA_CHECK(cudaGetLastError());
+
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix_t->row_ptr, (n_vars + 1) * sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix_t->col_ind, original_problem->constraint_matrix_num_nonzeros * sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix_t->val, original_problem->constraint_matrix_num_nonzeros * sizeof(double)));
+
+    size_t buffer_size = 0;
+    void *buffer = nullptr;
+    CUSPARSE_CHECK(cusparseCsr2cscEx2_bufferSize(
+        state->sparse_handle, state->constraint_matrix->num_rows, state->constraint_matrix->num_cols, state->constraint_matrix->num_nonzeros,
+        state->constraint_matrix->val, state->constraint_matrix->row_ptr, state->constraint_matrix->col_ind,
+        state->constraint_matrix_t->val, state->constraint_matrix_t->row_ptr, state->constraint_matrix_t->col_ind,
+        CUDA_R_64F, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO,
+        CUSPARSE_CSR2CSC_ALG_DEFAULT, &buffer_size));
+    CUDA_CHECK(cudaMalloc(&buffer, buffer_size));
+
+    CUSPARSE_CHECK(cusparseCsr2cscEx2(
+        state->sparse_handle, state->constraint_matrix->num_rows, state->constraint_matrix->num_cols, state->constraint_matrix->num_nonzeros,
+        state->constraint_matrix->val, state->constraint_matrix->row_ptr, state->constraint_matrix->col_ind,
+        state->constraint_matrix_t->val, state->constraint_matrix_t->row_ptr, state->constraint_matrix_t->col_ind,
+        CUDA_R_64F, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO,
+        CUSPARSE_CSR2CSC_ALG_DEFAULT, buffer));
+
+    CUDA_CHECK(cudaFree(buffer));
+
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix_t->row_ind, nnz * sizeof(int)));
+    build_row_ind<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->constraint_matrix_t->row_ptr, n_vars, state->constraint_matrix_t->row_ind);
+    CUDA_CHECK(cudaGetLastError());
+
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix->transpose_pos, nnz * sizeof(int)));
+    state->constraint_matrix_t->transpose_pos = NULL;
+    build_transpose_pos<<<state->num_blocks_nnz, THREADS_PER_BLOCK>>>(
+        state->constraint_matrix->row_ind,
+        state->constraint_matrix->col_ind,
+        state->constraint_matrix_t->row_ptr,
+        state->constraint_matrix_t->col_ind,
+        nnz,
+        state->constraint_matrix->transpose_pos);
+    CUDA_CHECK(cudaGetLastError());
 
     ALLOC_AND_COPY(state->variable_lower_bound, working_problem->variable_lower_bound, var_bytes);
     ALLOC_AND_COPY(state->variable_upper_bound, working_problem->variable_upper_bound, var_bytes);
@@ -343,6 +392,13 @@ static pdhg_solver_state_t *initialize_solver_state(
     rescale_info->con_rescale = NULL;
     rescale_info->var_rescale = NULL;
     rescale_info_free(rescale_info);
+
+    CUDA_CHECK(cudaFree(state->constraint_matrix->row_ind));
+    state->constraint_matrix->row_ind = NULL;
+    CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ind));
+    state->constraint_matrix_t->row_ind = NULL;
+    CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_pos));
+    state->constraint_matrix->transpose_pos = NULL;
 
     double sum_of_squares = 0.0;
     double max_val = 0.0;
@@ -455,6 +511,51 @@ static pdhg_solver_state_t *initialize_solver_state(
     }
 
     return state;
+}
+
+__global__ void build_row_ind(const int* __restrict__ row_ptr,
+                              int num_rows,
+                              int* __restrict__ row_ind)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_rows) return;
+
+    int s = row_ptr[i];
+    int e = row_ptr[i + 1];
+
+    for (int k = s; k < e; ++k) {
+        row_ind[k] = i;
+    }
+}
+
+__global__ void build_transpose_pos(
+    const int* __restrict__ A_row_ind,
+    const int* __restrict__ A_col_ind,
+    const int* __restrict__ At_row_ptr,
+    const int* __restrict__ At_col_ind,
+    int nnz,
+    int* __restrict__ A_to_At)
+{
+    int k = blockIdx.x * blockDim.x + threadIdx.x;
+    if (k >= nnz) return;
+
+    int i = A_row_ind[k]; 
+    int j = A_col_ind[k];  
+
+    int start = At_row_ptr[j];
+    int end   = At_row_ptr[j + 1];
+
+    int pos = -1;
+    for (int idx = start; idx < end; ++idx) {
+        if (At_col_ind[idx] == i) {
+            pos = idx;
+            break;
+        }
+    }
+
+    if (pos < 0) return;
+
+    A_to_At[k]    = pos;
 }
 
 __global__ void compute_next_pdhg_primal_solution_kernel(
@@ -734,21 +835,13 @@ static void perform_restart(pdhg_solver_state_t *state,
     state->last_trial_fixed_point_error = INFINITY;
 }
 
-static void
-initialize_step_size_and_primal_weight(pdhg_solver_state_t *state,
-                                       const pdhg_parameters_t *params)
+static void initialize_step_size_and_primal_weight(pdhg_solver_state_t *state,
+                                                   const pdhg_parameters_t *params)
 {
-    if (state->constraint_matrix->num_nonzeros == 0)
-    {
-        state->step_size = 1.0;
-    }
-    else
-    {
-        double max_sv = estimate_maximum_singular_value(
-            state->sparse_handle, state->blas_handle, state->constraint_matrix,
-            state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
-        state->step_size = 0.998 / max_sv;
-    }
+    double max_sv = estimate_maximum_singular_value(
+        state->sparse_handle, state->blas_handle, state->constraint_matrix,
+        state->constraint_matrix_t, 5000, 1e-4);
+    state->step_size = 0.998 / max_sv;
 
     if (params->bound_objective_rescaling)
     {
@@ -810,6 +903,27 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         return;
     }
 
+    if (state->matA)
+        CUSPARSE_CHECK(cusparseDestroySpMat(state->matA));
+    if (state->matAt)
+        CUSPARSE_CHECK(cusparseDestroySpMat(state->matAt));
+    if (state->vec_primal_sol)
+        CUSPARSE_CHECK(cusparseDestroyDnVec(state->vec_primal_sol));
+    if (state->vec_dual_sol)
+        CUSPARSE_CHECK(cusparseDestroyDnVec(state->vec_dual_sol));
+    if (state->vec_primal_prod)
+        CUSPARSE_CHECK(cusparseDestroyDnVec(state->vec_primal_prod));
+    if (state->vec_dual_prod)
+        CUSPARSE_CHECK(cusparseDestroyDnVec(state->vec_dual_prod));
+    if (state->primal_spmv_buffer)
+         CUDA_CHECK(cudaFree(state->primal_spmv_buffer));
+    if (state->dual_spmv_buffer)
+        CUDA_CHECK(cudaFree(state->dual_spmv_buffer));
+    if (state->sparse_handle)
+        CUSPARSE_CHECK(cusparseDestroy(state->sparse_handle));
+    if (state->blas_handle)
+        CUBLAS_CHECK(cublasDestroy(state->blas_handle));
+
     if (state->variable_lower_bound)
         CUDA_CHECK(cudaFree(state->variable_lower_bound));
     if (state->variable_upper_bound)
@@ -820,14 +934,22 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->constraint_matrix->row_ptr));
     if (state->constraint_matrix->col_ind)
         CUDA_CHECK(cudaFree(state->constraint_matrix->col_ind));
+    if (state->constraint_matrix->row_ind)
+        CUDA_CHECK(cudaFree(state->constraint_matrix->row_ind));
     if (state->constraint_matrix->val)
         CUDA_CHECK(cudaFree(state->constraint_matrix->val));
+    if (state->constraint_matrix->transpose_pos)
+        CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_pos));
     if (state->constraint_matrix_t->row_ptr)
         CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ptr));
     if (state->constraint_matrix_t->col_ind)
         CUDA_CHECK(cudaFree(state->constraint_matrix_t->col_ind));
+    if (state->constraint_matrix_t->row_ind)
+        CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ind));
     if (state->constraint_matrix_t->val)
         CUDA_CHECK(cudaFree(state->constraint_matrix_t->val));
+    if (state->constraint_matrix_t->transpose_pos)
+        CUDA_CHECK(cudaFree(state->constraint_matrix_t->transpose_pos));
     if (state->constraint_lower_bound)
         CUDA_CHECK(cudaFree(state->constraint_lower_bound));
     if (state->constraint_upper_bound)
@@ -880,6 +1002,11 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->ones_primal_d));
     if (state->ones_dual_d)
         CUDA_CHECK(cudaFree(state->ones_dual_d));
+
+    if (state->constraint_matrix)
+        free(state->constraint_matrix);
+    if (state->constraint_matrix_t)
+        free(state->constraint_matrix_t);
 
     free(state);
 }
