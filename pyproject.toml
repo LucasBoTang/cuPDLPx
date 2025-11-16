@@ -28,6 +28,10 @@ sdist.include = ["tests/**", "pyproject.toml", "README.md", "LICENSE"]
 CMAKE_CUDA_ARCHITECTURES = "all"
 CMAKE_CUDA_STANDARD = "17"
 CUPDLPX_BUILD_PYTHON = "ON"
+CUPDLPX_BUILD_STATIC_LIB = "ON"
+CUPDLPX_BUILD_SHARED_LIB = "OFF"
+CUPDLPX_BUILD_CLI = "OFF"
+CUPDLPX_BUILD_TESTS = "OFF"
 
 [project.optional-dependencies]
 test = [
