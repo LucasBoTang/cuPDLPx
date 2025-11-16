@@ -32,7 +32,7 @@ __global__ void scale_variables_kernel(double* __restrict__ c,
                                        double* __restrict__ primal_start,
                                        const double* __restrict__ D,
                                        const double* __restrict__ invD,
-                                       int n);
+                                       int n_vars);
 __global__ void scale_constraints_kernel(double* __restrict__ con_lb,
                                          double* __restrict__ con_ub,
                                          double* __restrict__ con_lb_finite,
@@ -40,7 +40,7 @@ __global__ void scale_constraints_kernel(double* __restrict__ con_lb,
                                          double* __restrict__ dual_start,
                                          const double* __restrict__ E,
                                          const double* __restrict__ invE,
-                                         int m);
+                                         int n_cons);
 __global__ void csr_scale_nnz_kernel(const int* __restrict__ row_ids,
                                      const int* __restrict__ col_ind,
                                      double* __restrict__ A_vals,
@@ -61,25 +61,38 @@ __global__ void csr_row_powsum_kernel(const int* __restrict__ row_ptr,
 __global__ void clamp_sqrt_and_accum(double* __restrict__ x,
                                      double* __restrict__ inv_x,
                                      double* __restrict__ cum, 
-                                     int n);
-__global__ void reduce_bound_norm_sq_atomic(
+                                     int n_vars);
+__global__ void reduce_bound_norm_sq_kernel(
     const double* __restrict__ L,
     const double* __restrict__ U,
-    int m,
-    double* __restrict__ out_sum);
-__global__ void fill_const_and_accum_kernel(double* __restrict__ x,
-                                            double* __restrict__ inv_x,
-                                            double* __restrict__ cum,
-                                            double val,
-                                            int n);
+    int n_cons,
+    double* __restrict__ block_sums);
+__global__ void scale_bounds_kernel(
+    double* __restrict__ con_lb,
+    double* __restrict__ con_ub,
+    double* __restrict__ con_lb_finite,
+    double* __restrict__ con_ub_finite,
+    double* __restrict__ dual_start,
+    int n_cons,
+    double con_scale,
+    double obj_scale);
+__global__ void scale_obj_kernel(
+    double* __restrict__ c,
+    double* __restrict__ var_lb,
+    double* __restrict__ var_ub,
+    double* __restrict__ var_lb_finite,
+    double* __restrict__ var_ub_finite,
+    double* __restrict__ primal_start,
+    int n_vars,
+    double con_scale,
+    double obj_scale);
+__global__ void fill_ones_kernel(double* __restrict__ x, int n_vars);
 static void scale_problem(pdhg_solver_state_t *state, double *E, double *D, double *invE, double *invD);
 static void ruiz_rescaling(pdhg_solver_state_t *state, int num_iters, rescale_info_t *rescale_info,
                            double *E, double *D, double *invE, double *invD);
-__global__ void fill_ones_kernel(double* __restrict__ x, int n);
 static void pock_chambolle_rescaling(pdhg_solver_state_t *state, double alpha, rescale_info_t *rescale_info,
                                      double *E, double *D, double *invE, double *invD);
-static void bound_objective_rescaling(pdhg_solver_state_t *state, rescale_info_t *rescale_info,
-                                     double *E, double *D, double *invE, double *invD);
+static void bound_objective_rescaling(pdhg_solver_state_t *state, rescale_info_t *rescale_info);
 
 static void scale_problem(
     pdhg_solver_state_t *state,
@@ -191,7 +204,7 @@ static void pock_chambolle_rescaling(
         state->constraint_matrix_t->row_ptr,
         state->constraint_matrix_t->val,
         n_vars,
-        alpha,
+        2.0 - alpha,
         D);
     clamp_sqrt_and_accum<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         D,
@@ -205,12 +218,7 @@ static void pock_chambolle_rescaling(
 
 static void bound_objective_rescaling(
     pdhg_solver_state_t *state,
-    rescale_info_t *rescale_info,
-    double *E,
-    double *D,
-    double *invE,
-    double *invD
-    )
+    rescale_info_t *rescale_info)
 {
     const int n_cons = state->num_constraints;
     const int n_vars = state->num_variables;
@@ -218,7 +226,7 @@ static void bound_objective_rescaling(
     double *bnd_norm_sq_cuda = nullptr;
     CUDA_CHECK(cudaMalloc(&bnd_norm_sq_cuda, sizeof(double)));
     CUDA_CHECK(cudaMemset(bnd_norm_sq_cuda, 0, sizeof(double)));
-    reduce_bound_norm_sq_atomic<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+    reduce_bound_norm_sq_kernel<<<1, THREADS_PER_BLOCK, THREADS_PER_BLOCK * sizeof(double)>>>(
         state->constraint_lower_bound,
         state->constraint_upper_bound,
         n_cons,
@@ -235,14 +243,32 @@ static void bound_objective_rescaling(
                              state->objective_vector, 1,
                              &obj_norm));
 
-    const double E_const = bnd_norm + 1.0;
-    const double D_const = obj_norm + 1.0;
-    fill_const_and_accum_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
-        E, invE, rescale_info->con_rescale, E_const, n_cons);
-    fill_const_and_accum_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
-        D, invD, rescale_info->var_rescale, D_const, n_vars);
+    double con_scale = 1.0 / (bnd_norm + 1.0);
+    double obj_scale = 1.0 / (obj_norm + 1.0);
 
-    scale_problem(state, E, D, invE, invD);
+    scale_bounds_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->constraint_lower_bound,
+        state->constraint_upper_bound,
+        state->constraint_lower_bound_finite_val,
+        state->constraint_upper_bound_finite_val,
+        state->initial_dual_solution,
+        n_cons,
+        con_scale,
+        obj_scale);
+
+    scale_obj_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->objective_vector,
+        state->variable_lower_bound,
+        state->variable_upper_bound,
+        state->variable_lower_bound_finite_val,
+        state->variable_upper_bound_finite_val,
+        state->initial_primal_solution,
+        n_vars,
+        con_scale,
+        obj_scale);
+
+    rescale_info->con_bound_rescale = con_scale;
+    rescale_info->obj_vec_rescale   = obj_scale;
 }
 
 rescale_info_t *rescale_problem(
@@ -279,12 +305,15 @@ rescale_info_t *rescale_problem(
         printf("[Precondition] Pock-Chambolle scaling (alpha=%.4f)\n", params->pock_chambolle_alpha);
         pock_chambolle_rescaling(state, params->pock_chambolle_alpha, rescale_info, E, D, invE, invD);
     }
+
+    rescale_info->con_bound_rescale = 1.0;
+    rescale_info->obj_vec_rescale = 1.0;
     if (params->bound_objective_rescaling)
     {
         printf("[Precondition] Bound-objective scaling\n");
-        bound_objective_rescaling(state, rescale_info, E, D, invE, invD);
+        bound_objective_rescaling(state, rescale_info);
     }
-
+    
     rescale_info->rescaling_time_sec = (double)(clock() - start_rescaling) / CLOCKS_PER_SEC;
 
     CUDA_CHECK(cudaFree(E));
@@ -303,10 +332,10 @@ __global__ void scale_variables_kernel(double* __restrict__ c,
                                        double* __restrict__ primal_start,
                                        const double* __restrict__ D,
                                        const double* __restrict__ invD,
-                                       int n)
+                                       int n_vars)
 {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
-    if (j >= n) return;
+    if (j >= n_vars) return;
     double dj = D[j];
     double inv_dj = invD[j];
     c[j]      *= inv_dj;
@@ -324,10 +353,10 @@ __global__ void scale_constraints_kernel(double* __restrict__ con_lb,
                                          double* __restrict__ dual_start,
                                          const double* __restrict__ E,
                                          const double* __restrict__ invE,
-                                         int m)
+                                         int n_cons)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= m) return;
+    if (i >= n_cons) return;
     double inv_ei = invE[i];
     double ei = E[i];
     con_lb[i] *= inv_ei;
@@ -403,9 +432,9 @@ __global__ void csr_row_powsum_kernel(const int* __restrict__ row_ptr,
 __global__ void clamp_sqrt_and_accum(double* __restrict__ x, 
                                      double* __restrict__ inv_x,
                                      double* __restrict__ cum, 
-                                     int n) 
+                                     int n_vars) 
 {
-    for (int t = blockIdx.x * blockDim.x + threadIdx.x; t < n; t += blockDim.x * gridDim.x)
+    for (int t = blockIdx.x * blockDim.x + threadIdx.x; t < n_vars; t += blockDim.x * gridDim.x)
     {
         double v = x[t]; 
         double s = (v < SCALING_EPSILON) ? 1.0 : sqrt(v); 
@@ -415,38 +444,87 @@ __global__ void clamp_sqrt_and_accum(double* __restrict__ x,
     }
 }
 
-__global__ void reduce_bound_norm_sq_atomic(
+__global__ void reduce_bound_norm_sq_kernel(
     const double* __restrict__ L,
     const double* __restrict__ U,
-    int m,
-    double* __restrict__ out_sum)
+    int n_cons,
+    double* __restrict__ block_sums)
 {
+    extern __shared__ double sdata[];
+    int tid = threadIdx.x;
+    int global_tid = blockIdx.x * blockDim.x + tid;
+    int stride = blockDim.x * gridDim.x;
+
     double acc = 0.0;
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < m; i += blockDim.x * gridDim.x) {
+    for (int i = global_tid; i < n_cons; i += stride) {
         double Li = L[i], Ui = U[i];
         bool fL = isfinite(Li), fU = isfinite(Ui);
-        if (fL && (!fU || fabs(Li - Ui) > SCALING_EPSILON)) acc += Li * Li;
-        if (fU)                                 acc += Ui * Ui;
+
+        if (fL && (!fU || fabs(Li - Ui) > SCALING_EPSILON)) {
+            acc += Li * Li;
+        }
+        if (fU) {
+            acc += Ui * Ui;
+        }
     }
-    atomicAdd(out_sum, acc);
+
+    sdata[tid] = acc;
+    __syncthreads();
+
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        block_sums[blockIdx.x] = sdata[0];
+    }
 }
 
-__global__ void fill_const_and_accum_kernel(double* __restrict__ x,
-                                            double* __restrict__ inv_x,
-                                            double* __restrict__ cum,
-                                            double val,
-                                            int n)
+__global__ void scale_bounds_kernel(
+    double* __restrict__ con_lb,
+    double* __restrict__ con_ub,
+    double* __restrict__ con_lb_finite,
+    double* __restrict__ con_ub_finite,
+    double* __restrict__ dual_start,
+    int n_cons,
+    double con_scale,
+    double obj_scale)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= n) return;
-
-    x[i]     = val;
-    inv_x[i] = 1.0 / val;
-    cum[i]  *= val;
+    if (i >= n_cons) return;
+    con_lb[i]        *= con_scale;
+    con_ub[i]        *= con_scale;
+    con_lb_finite[i] *= con_scale;
+    con_ub_finite[i] *= con_scale;
+    dual_start[i]    *= obj_scale;
 }
 
-__global__ void fill_ones_kernel(double* __restrict__ x, int n)
+__global__ void scale_obj_kernel(
+    double* __restrict__ c,
+    double* __restrict__ var_lb,
+    double* __restrict__ var_ub,
+    double* __restrict__ var_lb_finite,
+    double* __restrict__ var_ub_finite,
+    double* __restrict__ primal_start,
+    int n_vars,
+    double con_scale,
+    double obj_scale)
+{
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    if (j >= n_vars) return;
+    var_lb[j]        *= con_scale;
+    var_ub[j]        *= con_scale;
+    var_lb_finite[j] *= con_scale;
+    var_ub_finite[j] *= con_scale;
+    c[j]             *= obj_scale;
+    primal_start[j]  *= con_scale;
+}
+
+__global__ void fill_ones_kernel(double* __restrict__ x, int n_vars)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) x[i] = 1.0;
+    if (i < n_vars) x[i] = 1.0;
 }
