@@ -456,18 +456,19 @@ void pdhg_final_log(
                "--------------------\n");
     }
     printf("Solution Summary\n");
-    printf("  Status             : %s\n", termination_reason_to_string(result->termination_reason));
+    printf("  Status                 : %s\n", termination_reason_to_string(result->termination_reason));
     if (params->presolve)
     {
-        printf("  Presolve time      : %.3g sec\n", result->presolve_time);
+    printf("  Presolve time          : %.3g sec\n", result->presolve_time);
     }
-    printf("  Solve time         : %.3g sec\n", result->cumulative_time_sec);
-    printf("  Iterations         : %d\n", result->total_count);
-    printf("  Primal objective   : %.10g\n", result->primal_objective_value);
-    printf("  Dual objective     : %.10g\n", result->dual_objective_value);
-    printf("  Objective gap      : %.3e\n", result->relative_objective_gap);
-    printf("  Primal infeas      : %.3e\n", result->relative_primal_residual);
-    printf("  Dual infeas        : %.3e\n", result->relative_dual_residual);
+    printf("  Precondition time      : %.5g sec\n", state->rescaling_time_sec);
+    printf("  Solve time             : %.3g sec\n", result->cumulative_time_sec);
+    printf("  Iterations             : %d\n", result->total_count);
+    printf("  Primal objective       : %.10g\n", result->primal_objective_value);
+    printf("  Dual objective         : %.10g\n", result->dual_objective_value);
+    printf("  Objective gap          : %.3e\n", result->relative_objective_gap);
+    printf("  Primal infeas          : %.3e\n", result->relative_primal_residual);
+    printf("  Dual infeas            : %.3e\n", result->relative_dual_residual);
 
     // if (stats != NULL && stats->n_rows_original > 0) {
     //     printf("\nPresolve Summary\n");
