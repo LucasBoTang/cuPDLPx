@@ -370,13 +370,14 @@ void pdhg_final_log(const pdhg_solver_state_t *state, bool verbose,
                "--------------------\n");
     }
     printf("Solution Summary\n");
-    printf("  Status        : %s\n", termination_reason_to_string(reason));
-    printf("  Iterations    : %d\n", state->total_count - 1);
-    printf("  Solve time    : %.3g sec\n", state->cumulative_time_sec);
-    printf("  Primal obj    : %.10g\n", state->primal_objective_value);
-    printf("  Dual obj      : %.10g\n", state->dual_objective_value);
-    printf("  Primal infeas : %.3e\n", state->relative_primal_residual);
-    printf("  Dual infeas   : %.3e\n", state->relative_dual_residual);
+    printf("  Status            : %s\n", termination_reason_to_string(reason));
+    printf("  Precondition time : %.5g sec\n", state->rescaling_time_sec);
+    printf("  Iterations        : %d\n", state->total_count - 1);
+    printf("  Solve time        : %.3g sec\n", state->cumulative_time_sec);
+    printf("  Primal obj        : %.10g\n", state->primal_objective_value);
+    printf("  Dual obj          : %.10g\n", state->dual_objective_value);
+    printf("  Primal infeas     : %.3e\n", state->relative_primal_residual);
+    printf("  Dual infeas       : %.3e\n", state->relative_dual_residual);
 }
 
 void display_iteration_stats(const pdhg_solver_state_t *state, bool verbose)
@@ -1010,7 +1011,7 @@ void print_initial_feas_polish_info(bool is_primal_polish, const pdhg_parameters
     printf("---------------------------------------------------------------------------------------\n");
     if (is_primal_polish) printf("%s %s |  %s  | %s | %s \n",  "  iter", "  time ", "pr obj", " abs pr res ", " rel pr res ");
     // else printf("%s %s | %s | %s \n",  "  iter", "  time ", " abs du res ", " rel du res ");
-    else printf("%s %s |  %s  | %s | %s \n", "  iter", "  time ", "du obj", " abs du res ", " rel du res ");  
+    else printf("%s %s |  %s  | %s | %s \n", "  iter", "  time ", "du obj", " abs du res ", " rel du res ");
     printf("---------------------------------------------------------------------------------------\n");
 }
 
@@ -1134,7 +1135,7 @@ void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_so
     CUSPARSE_CHECK(cusparseSpMV(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matAt, state->vec_dual_sol, &HOST_ZERO, state->vec_dual_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->dual_spmv_buffer));
 
     compute_dual_feas_polish_residual_kerenl<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
-        state->dual_residual, 
+        state->dual_residual,
         state->pdhg_dual_solution,
         state->dual_product,
         state->dual_slack, state->objective_vector,
