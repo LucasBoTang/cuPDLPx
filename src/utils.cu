@@ -15,9 +15,12 @@ limitations under the License.
 */
 
 #include "utils.h"
-#include "version.h"
 #include <math.h>
 #include <random>
+
+#ifndef CUPDLPX_VERSION
+#define CUPDLPX_VERSION "unknown"
+#endif
 
 std::mt19937 gen(1);
 std::normal_distribution<double> dist(0.0, 1.0);
