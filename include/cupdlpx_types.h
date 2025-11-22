@@ -141,12 +141,12 @@ extern "C"
 
 		union MatrixData
 		{
-			struct
+			struct MatrixDense
 			{					 // Dense (row-major)
 				const double *A; // m*n
 			} dense;
 
-			struct
+			struct MatrixCSR
 			{ // CSR
 				int nnz;
 				const int *row_ptr;
@@ -154,7 +154,7 @@ extern "C"
 				const double *vals;
 			} csr;
 
-			struct
+			struct MatrixCSC
 			{ // CSC
 				int nnz;
 				const int *col_ptr;
@@ -162,7 +162,7 @@ extern "C"
 				const double *vals;
 			} csc;
 
-			struct
+			struct MatrixCOO
 			{ // COO
 				int nnz;
 				const int *row_ind;
