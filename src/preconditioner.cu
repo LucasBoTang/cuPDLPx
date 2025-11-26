@@ -22,7 +22,7 @@ limitations under the License.
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
-#define SCALING_EPSILON 1e-12
+#define SCALING_EPSILON 1e-8
 
 __global__ void scale_variables_kernel(double* __restrict__ c,
                                        double* __restrict__ var_lb,
@@ -60,7 +60,7 @@ __global__ void csr_row_powsum_kernel(const int* __restrict__ row_ptr,
                                           double* __restrict__ out_sum);
 __global__ void clamp_sqrt_and_accum(double* __restrict__ x,
                                      double* __restrict__ inv_x,
-                                     double* __restrict__ cum, 
+                                     double* __restrict__ cum,
                                      int n_vars);
 __global__ void reduce_bound_norm_sq_kernel(
     const double* __restrict__ L,
@@ -199,7 +199,7 @@ static void pock_chambolle_rescaling(
         invE,
         rescale_info->con_rescale,
         n_cons);
-        
+
     csr_row_powsum_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         state->constraint_matrix_t->row_ptr,
         state->constraint_matrix_t->val,
@@ -231,7 +231,7 @@ static void bound_objective_rescaling(
         state->constraint_upper_bound,
         n_cons,
         bnd_norm_sq_cuda);
-    
+
     double bnd_norm_sq = 0.0;
     CUDA_CHECK(cudaMemcpy(&bnd_norm_sq, bnd_norm_sq_cuda, sizeof(double), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaFree(bnd_norm_sq_cuda));
@@ -276,7 +276,7 @@ rescale_info_t *rescale_problem(
     pdhg_solver_state_t *state)
 {
     printf("[Precondition] Start\n");
-    
+
     int n_vars = state->num_variables;
     int n_cons = state->num_constraints;
 
@@ -313,14 +313,14 @@ rescale_info_t *rescale_problem(
         printf("[Precondition] Bound-objective scaling\n");
         bound_objective_rescaling(state, rescale_info);
     }
-    
+
     rescale_info->rescaling_time_sec = (double)(clock() - start_rescaling) / CLOCKS_PER_SEC;
 
     CUDA_CHECK(cudaFree(E));
     CUDA_CHECK(cudaFree(D));
     CUDA_CHECK(cudaFree(invE));
     CUDA_CHECK(cudaFree(invD));
-    
+
     return rescale_info;
 }
 
@@ -376,7 +376,7 @@ __global__ void csr_scale_nnz_kernel(const int* __restrict__ row_ids,
                                      int nnz)
 {
     for (int k = blockIdx.x * blockDim.x + threadIdx.x;
-         k < nnz; 
+         k < nnz;
          k += gridDim.x * blockDim.x)
     {
         int i = row_ids[k];
@@ -429,16 +429,16 @@ __global__ void csr_row_powsum_kernel(const int* __restrict__ row_ptr,
     out_sum[i] = acc;
 }
 
-__global__ void clamp_sqrt_and_accum(double* __restrict__ x, 
+__global__ void clamp_sqrt_and_accum(double* __restrict__ x,
                                      double* __restrict__ inv_x,
-                                     double* __restrict__ cum, 
-                                     int n_vars) 
+                                     double* __restrict__ cum,
+                                     int n_vars)
 {
     for (int t = blockIdx.x * blockDim.x + threadIdx.x; t < n_vars; t += blockDim.x * gridDim.x)
     {
-        double v = x[t]; 
-        double s = (v < SCALING_EPSILON) ? 1.0 : sqrt(v); 
-        cum[t] *= s; 
+        double v = x[t];
+        double s = sqrt(fmax(v, SCALING_EPSILON));
+        cum[t] *= s;
         x[t] = s;
         inv_x[t] = 1.0 / s;
     }
