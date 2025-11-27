@@ -30,7 +30,7 @@ typedef struct
 	int *col_ind;
 	int *row_ind;
 	double *val;
-	int *transpose_pos;
+	int *transpose_map;
 } cu_sparse_matrix_csr_t;
 
 typedef struct
