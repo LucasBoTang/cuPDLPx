@@ -28,57 +28,57 @@ limitations under the License.
 #include <stdio.h>
 #include <time.h>
 
-__global__ void build_row_ind(const int* __restrict__ row_ptr,
+__global__ void build_row_ind(const int *__restrict__ row_ptr,
                               int num_rows,
-                              int* __restrict__ row_ind);
-__global__ void build_transpose_pos(const int* __restrict__ A_row_ind,
-                                    const int* __restrict__ A_col_ind,
-                                    const int* __restrict__ At_row_ptr,
-                                    const int* __restrict__ At_col_ind,
+                              int *__restrict__ row_ind);
+__global__ void build_transpose_map(const int *__restrict__ A_row_ind,
+                                    const int *__restrict__ A_col_ind,
+                                    const int *__restrict__ At_row_ptr,
+                                    const int *__restrict__ At_col_ind,
                                     int nnz,
-                                    int* __restrict__ A_to_At);
-__global__ void compute_next_pdhg_primal_solution_kernel(const double *current_primal, 
-                                                         double *reflected_primal, 
+                                    int *__restrict__ A_to_At);
+__global__ void compute_next_pdhg_primal_solution_kernel(const double *current_primal,
+                                                         double *reflected_primal,
                                                          const double *dual_product,
-                                                         const double *objective, 
-                                                         const double *var_lb, 
+                                                         const double *objective,
+                                                         const double *var_lb,
                                                          const double *var_ub,
-                                                         int n, 
+                                                         int n,
                                                          double step_size);
-__global__ void compute_next_pdhg_primal_solution_major_kernel(const double *current_primal, 
-                                                               double *pdhg_primal, 
+__global__ void compute_next_pdhg_primal_solution_major_kernel(const double *current_primal,
+                                                               double *pdhg_primal,
                                                                double *reflected_primal,
-                                                               const double *dual_product, 
-                                                               const double *objective, 
+                                                               const double *dual_product,
+                                                               const double *objective,
                                                                const double *var_lb,
-                                                               const double *var_ub, 
-                                                               int n, 
-                                                               double step_size, 
+                                                               const double *var_ub,
+                                                               int n,
+                                                               double step_size,
                                                                double *dual_slack);
-__global__ void compute_next_pdhg_dual_solution_kernel(const double *current_dual, 
-                                                       double *reflected_dual, 
+__global__ void compute_next_pdhg_dual_solution_kernel(const double *current_dual,
+                                                       double *reflected_dual,
                                                        const double *primal_product,
-                                                       const double *const_lb, 
-                                                       const double *const_ub, 
-                                                       int n, 
+                                                       const double *const_lb,
+                                                       const double *const_ub,
+                                                       int n,
                                                        double step_size);
-__global__ void compute_next_pdhg_dual_solution_major_kernel(const double *current_dual, 
-                                                             double *pdhg_dual, 
+__global__ void compute_next_pdhg_dual_solution_major_kernel(const double *current_dual,
+                                                             double *pdhg_dual,
                                                              double *reflected_dual,
-                                                             const double *primal_product, 
-                                                             const double *const_lb, 
+                                                             const double *primal_product,
+                                                             const double *const_lb,
                                                              const double *const_ub,
-                                                             int n, 
+                                                             int n,
                                                              double step_size);
-__global__ void halpern_update_kernel(const double *initial_primal, 
-                                      double *current_primal, 
+__global__ void halpern_update_kernel(const double *initial_primal,
+                                      double *current_primal,
                                       const double *reflected_primal,
-                                      const double *initial_dual, 
-                                      double *current_dual, 
+                                      const double *initial_dual,
+                                      double *current_dual,
                                       const double *reflected_dual,
-                                      int n_vars, 
-                                      int n_cons, 
-                                      double weight, 
+                                      int n_vars,
+                                      int n_cons,
+                                      double weight,
                                       double reflection_coeff);
 __global__ void rescale_solution_kernel(double *primal_solution,
                                         double *dual_solution,
@@ -87,13 +87,13 @@ __global__ void rescale_solution_kernel(double *primal_solution,
                                         const double objective_vector_rescaling,
                                         const double constraint_bound_rescaling,
                                         int n_vars, int n_cons);
-__global__ void compute_delta_solution_kernel(const double *initial_primal, 
-                                              const double *pdhg_primal, 
+__global__ void compute_delta_solution_kernel(const double *initial_primal,
+                                              const double *pdhg_primal,
                                               double *delta_primal,
-                                              const double *initial_dual, 
-                                              const double *pdhg_dual, 
+                                              const double *initial_dual,
+                                              const double *pdhg_dual,
                                               double *delta_dual,
-                                              int n_vars, 
+                                              int n_vars,
                                               int n_cons);
 static void compute_next_pdhg_primal_solution(pdhg_solver_state_t *state);
 static void compute_next_pdhg_dual_solution(pdhg_solver_state_t *state);
@@ -277,7 +277,7 @@ static pdhg_solver_state_t *initialize_solver_state(
     state->num_blocks_dual = (state->num_constraints + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     state->num_blocks_primal_dual = (state->num_variables + state->num_constraints + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     state->num_blocks_nnz = (state->constraint_matrix->num_nonzeros + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
-    
+
     CUSPARSE_CHECK(cusparseCreate(&state->sparse_handle));
     CUBLAS_CHECK(cublasCreate(&state->blas_handle));
     CUBLAS_CHECK(cublasSetPointerMode(state->blas_handle, CUBLAS_POINTER_MODE_HOST));
@@ -323,15 +323,15 @@ static pdhg_solver_state_t *initialize_solver_state(
         state->constraint_matrix_t->row_ptr, n_vars, state->constraint_matrix_t->row_ind);
     CUDA_CHECK(cudaGetLastError());
 
-    CUDA_CHECK(cudaMalloc(&state->constraint_matrix->transpose_pos, nnz * sizeof(int)));
-    state->constraint_matrix_t->transpose_pos = NULL;
-    build_transpose_pos<<<state->num_blocks_nnz, THREADS_PER_BLOCK>>>(
+    CUDA_CHECK(cudaMalloc(&state->constraint_matrix->transpose_map, nnz * sizeof(int)));
+    state->constraint_matrix_t->transpose_map = NULL;
+    build_transpose_map<<<state->num_blocks_nnz, THREADS_PER_BLOCK>>>(
         state->constraint_matrix->row_ind,
         state->constraint_matrix->col_ind,
         state->constraint_matrix_t->row_ptr,
         state->constraint_matrix_t->col_ind,
         nnz,
-        state->constraint_matrix->transpose_pos);
+        state->constraint_matrix->transpose_map);
     CUDA_CHECK(cudaGetLastError());
 
     ALLOC_AND_COPY(state->variable_lower_bound, working_problem->variable_lower_bound, var_bytes);
@@ -393,10 +393,10 @@ static pdhg_solver_state_t *initialize_solver_state(
     rescale_info_t *rescale_info = rescale_problem(params, state);
 
     state->constraint_rescaling = rescale_info->con_rescale;
-    state->variable_rescaling   = rescale_info->var_rescale;
+    state->variable_rescaling = rescale_info->var_rescale;
     state->constraint_bound_rescaling = rescale_info->con_bound_rescale;
     state->objective_vector_rescaling = rescale_info->obj_vec_rescale;
-    state->rescaling_time_sec   = rescale_info->rescaling_time_sec;
+    state->rescaling_time_sec = rescale_info->rescaling_time_sec;
 
     rescale_info->con_rescale = NULL;
     rescale_info->var_rescale = NULL;
@@ -406,8 +406,8 @@ static pdhg_solver_state_t *initialize_solver_state(
     state->constraint_matrix->row_ind = NULL;
     CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ind));
     state->constraint_matrix_t->row_ind = NULL;
-    CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_pos));
-    state->constraint_matrix->transpose_pos = NULL;
+    CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_map));
+    state->constraint_matrix->transpose_map = NULL;
 
     double sum_of_squares = 0.0;
     double max_val = 0.0;
@@ -479,7 +479,7 @@ static pdhg_solver_state_t *initialize_solver_state(
     CUSPARSE_CHECK(cusparseCreateDnVec(&state->vec_primal_prod, state->num_constraints, state->primal_product, CUDA_R_64F));
     CUSPARSE_CHECK(cusparseCreateDnVec(&state->vec_dual_prod, state->num_variables, state->dual_product, CUDA_R_64F));
     CUSPARSE_CHECK(cusparseSpMV_bufferSize(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matA, state->vec_primal_sol, &HOST_ZERO, state->vec_primal_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, &primal_spmv_buffer_size));
-    
+
     CUSPARSE_CHECK(cusparseSpMV_bufferSize(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matAt, state->vec_dual_sol, &HOST_ZERO, state->vec_dual_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, &dual_spmv_buffer_size));
     CUDA_CHECK(cudaMalloc(&state->primal_spmv_buffer, primal_spmv_buffer_size));
     CUSPARSE_CHECK(cusparseSpMV_preprocess(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
@@ -520,49 +520,55 @@ static pdhg_solver_state_t *initialize_solver_state(
     return state;
 }
 
-__global__ void build_row_ind(const int* __restrict__ row_ptr,
+__global__ void build_row_ind(const int *__restrict__ row_ptr,
                               int num_rows,
-                              int* __restrict__ row_ind)
+                              int *__restrict__ row_ind)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_rows) return;
+    if (i >= num_rows)
+        return;
 
     int s = row_ptr[i];
     int e = row_ptr[i + 1];
 
-    for (int k = s; k < e; ++k) {
+    for (int k = s; k < e; ++k)
+    {
         row_ind[k] = i;
     }
 }
 
-__global__ void build_transpose_pos(
-    const int* __restrict__ A_row_ind,
-    const int* __restrict__ A_col_ind,
-    const int* __restrict__ At_row_ptr,
-    const int* __restrict__ At_col_ind,
+__global__ void build_transpose_map(
+    const int *__restrict__ A_row_ind,
+    const int *__restrict__ A_col_ind,
+    const int *__restrict__ At_row_ptr,
+    const int *__restrict__ At_col_ind,
     int nnz,
-    int* __restrict__ A_to_At)
+    int *__restrict__ A_to_At)
 {
     int k = blockIdx.x * blockDim.x + threadIdx.x;
-    if (k >= nnz) return;
+    if (k >= nnz)
+        return;
 
-    int i = A_row_ind[k]; 
-    int j = A_col_ind[k];  
+    int i = A_row_ind[k];
+    int j = A_col_ind[k];
 
     int start = At_row_ptr[j];
-    int end   = At_row_ptr[j + 1];
+    int end = At_row_ptr[j + 1];
 
     int pos = -1;
-    for (int idx = start; idx < end; ++idx) {
-        if (At_col_ind[idx] == i) {
+    for (int idx = start; idx < end; ++idx)
+    {
+        if (At_col_ind[idx] == i)
+        {
             pos = idx;
             break;
         }
     }
 
-    if (pos < 0) return;
+    if (pos < 0)
+        return;
 
-    A_to_At[k]    = pos;
+    A_to_At[k] = pos;
 }
 
 __global__ void compute_next_pdhg_primal_solution_kernel(
@@ -927,7 +933,7 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
     if (state->vec_dual_prod)
         CUSPARSE_CHECK(cusparseDestroyDnVec(state->vec_dual_prod));
     if (state->primal_spmv_buffer)
-         CUDA_CHECK(cudaFree(state->primal_spmv_buffer));
+        CUDA_CHECK(cudaFree(state->primal_spmv_buffer));
     if (state->dual_spmv_buffer)
         CUDA_CHECK(cudaFree(state->dual_spmv_buffer));
     if (state->sparse_handle)
@@ -949,8 +955,8 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->constraint_matrix->row_ind));
     if (state->constraint_matrix->val)
         CUDA_CHECK(cudaFree(state->constraint_matrix->val));
-    if (state->constraint_matrix->transpose_pos)
-        CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_pos));
+    if (state->constraint_matrix->transpose_map)
+        CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_map));
     if (state->constraint_matrix_t->row_ptr)
         CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ptr));
     if (state->constraint_matrix_t->col_ind)
@@ -959,8 +965,8 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ind));
     if (state->constraint_matrix_t->val)
         CUDA_CHECK(cudaFree(state->constraint_matrix_t->val));
-    if (state->constraint_matrix_t->transpose_pos)
-        CUDA_CHECK(cudaFree(state->constraint_matrix_t->transpose_pos));
+    if (state->constraint_matrix_t->transpose_map)
+        CUDA_CHECK(cudaFree(state->constraint_matrix_t->transpose_map));
     if (state->constraint_lower_bound)
         CUDA_CHECK(cudaFree(state->constraint_lower_bound));
     if (state->constraint_upper_bound)
