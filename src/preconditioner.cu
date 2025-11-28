@@ -27,16 +27,12 @@ limitations under the License.
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
                                        double *__restrict__ variable_upper_bound,
-                                       double *__restrict__ variable_lower_bound_finite_val,
-                                       double *__restrict__ variable_upper_bound_finite_val,
                                        double *__restrict__ initial_primal_solution,
                                        const double *__restrict__ variable_rescaling,
                                        const double *__restrict__ inverse_variable_rescaling,
                                        int num_variables);
 __global__ void scale_constraints_kernel(double *__restrict__ constraint_lower_bound,
                                          double *__restrict__ constraint_upper_bound,
-                                         double *__restrict__ constraint_lower_bound_finite_val,
-                                         double *__restrict__ constraint_upper_bound_finite_val,
                                          double *__restrict__ initial_dual_solution,
                                          const double *__restrict__ constraint_rescaling,
                                          const double *__restrict__ inverse_constraint_rescaling,
@@ -70,8 +66,6 @@ __global__ void reduce_bound_norm_sq_kernel(
 __global__ void scale_bounds_kernel(
     double *__restrict__ constraint_lower_bound,
     double *__restrict__ constraint_upper_bound,
-    double *__restrict__ constraint_lower_bound_finite_val,
-    double *__restrict__ constraint_upper_bound_finite_val,
     double *__restrict__ initial_dual_solution,
     int num_constraints,
     double constraint_scale,
@@ -80,8 +74,6 @@ __global__ void scale_objective_kernel(
     double *__restrict__ objective_vector,
     double *__restrict__ variable_lower_bound,
     double *__restrict__ variable_upper_bound,
-    double *__restrict__ variable_lower_bound_finite_val,
-    double *__restrict__ variable_upper_bound_finite_val,
     double *__restrict__ initial_primal_solution,
     int num_variables,
     double constraint_scale,
@@ -108,8 +100,6 @@ static void scale_problem(
         state->objective_vector,
         state->variable_lower_bound,
         state->variable_upper_bound,
-        state->variable_lower_bound_finite_val,
-        state->variable_upper_bound_finite_val,
         state->initial_primal_solution,
         variable_rescaling,
         inverse_variable_rescaling,
@@ -118,8 +108,6 @@ static void scale_problem(
     scale_constraints_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_lower_bound,
         state->constraint_upper_bound,
-        state->constraint_lower_bound_finite_val,
-        state->constraint_upper_bound_finite_val,
         state->initial_dual_solution,
         constraint_rescaling,
         inverse_constraint_rescaling,
@@ -248,8 +236,6 @@ static void bound_objective_rescaling(
     scale_bounds_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_lower_bound,
         state->constraint_upper_bound,
-        state->constraint_lower_bound_finite_val,
-        state->constraint_upper_bound_finite_val,
         state->initial_dual_solution,
         num_constraints,
         constraint_scale,
@@ -259,8 +245,6 @@ static void bound_objective_rescaling(
         state->objective_vector,
         state->variable_lower_bound,
         state->variable_upper_bound,
-        state->variable_lower_bound_finite_val,
-        state->variable_upper_bound_finite_val,
         state->initial_primal_solution,
         num_variables,
         constraint_scale,
@@ -326,8 +310,6 @@ rescale_info_t *rescale_problem(
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
                                        double *__restrict__ variable_upper_bound,
-                                       double *__restrict__ variable_lower_bound_finite_val,
-                                       double *__restrict__ variable_upper_bound_finite_val,
                                        double *__restrict__ initial_primal_solution,
                                        const double *__restrict__ variable_rescaling,
                                        const double *__restrict__ inverse_variable_rescaling,
@@ -341,15 +323,11 @@ __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
     objective_vector[j] *= inv_dj;
     variable_lower_bound[j] *= dj;
     variable_upper_bound[j] *= dj;
-    variable_lower_bound_finite_val[j] *= dj;
-    variable_upper_bound_finite_val[j] *= dj;
     initial_primal_solution[j] *= dj;
 }
 
 __global__ void scale_constraints_kernel(double *__restrict__ constraint_lower_bound,
                                          double *__restrict__ constraint_upper_bound,
-                                         double *__restrict__ constraint_lower_bound_finite_val,
-                                         double *__restrict__ constraint_upper_bound_finite_val,
                                          double *__restrict__ initial_dual_solution,
                                          const double *__restrict__ constraint_rescaling,
                                          const double *__restrict__ inverse_constraint_rescaling,
@@ -362,8 +340,6 @@ __global__ void scale_constraints_kernel(double *__restrict__ constraint_lower_b
     double ei = constraint_rescaling[i];
     constraint_lower_bound[i] *= inv_ei;
     constraint_upper_bound[i] *= inv_ei;
-    constraint_lower_bound_finite_val[i] *= inv_ei;
-    constraint_upper_bound_finite_val[i] *= inv_ei;
     initial_dual_solution[i] *= ei;
 }
 
@@ -504,8 +480,6 @@ __global__ void reduce_bound_norm_sq_kernel(
 __global__ void scale_bounds_kernel(
     double *__restrict__ constraint_lower_bound,
     double *__restrict__ constraint_upper_bound,
-    double *__restrict__ constraint_lower_bound_finite_val,
-    double *__restrict__ constraint_upper_bound_finite_val,
     double *__restrict__ initial_dual_solution,
     int num_constraints,
     double constraint_scale,
@@ -516,8 +490,6 @@ __global__ void scale_bounds_kernel(
         return;
     constraint_lower_bound[i] *= constraint_scale;
     constraint_upper_bound[i] *= constraint_scale;
-    constraint_lower_bound_finite_val[i] *= constraint_scale;
-    constraint_upper_bound_finite_val[i] *= constraint_scale;
     initial_dual_solution[i] *= objective_scale;
 }
 
@@ -525,8 +497,6 @@ __global__ void scale_objective_kernel(
     double *__restrict__ objective_vector,
     double *__restrict__ variable_lower_bound,
     double *__restrict__ variable_upper_bound,
-    double *__restrict__ variable_lower_bound_finite_val,
-    double *__restrict__ variable_upper_bound_finite_val,
     double *__restrict__ initial_primal_solution,
     int num_variables,
     double constraint_scale,
@@ -537,8 +507,6 @@ __global__ void scale_objective_kernel(
         return;
     variable_lower_bound[j] *= constraint_scale;
     variable_upper_bound[j] *= constraint_scale;
-    variable_lower_bound_finite_val[j] *= constraint_scale;
-    variable_upper_bound_finite_val[j] *= constraint_scale;
     objective_vector[j] *= objective_scale;
     initial_primal_solution[j] *= constraint_scale;
 }

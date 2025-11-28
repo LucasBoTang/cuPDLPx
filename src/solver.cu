@@ -36,6 +36,11 @@ __global__ void build_transpose_map(const int *__restrict__ A_row_ind,
                                     const int *__restrict__ At_col_ind,
                                     int nnz,
                                     int *__restrict__ A_to_At);
+__global__ void fill_finite_bounds_kernel(const double *__restrict__ lower_bound,
+                                          const double *__restrict__ upper_bound,
+                                          double *__restrict__ lower_bound_finite_val,
+                                          double *__restrict__ upper_bound_finite_val,
+                                          int num_elements);
 __global__ void compute_next_pdhg_primal_solution_kernel(const double *current_primal,
                                                          double *reflected_primal,
                                                          const double *dual_product,
@@ -289,21 +294,6 @@ static pdhg_solver_state_t *initialize_solver_state(
     ALLOC_AND_COPY(state->constraint_lower_bound, original_problem->constraint_lower_bound, con_bytes);
     ALLOC_AND_COPY(state->constraint_upper_bound, original_problem->constraint_upper_bound, con_bytes);
 
-    double *temp_host = (double *)safe_malloc(fmax(var_bytes, con_bytes));
-    for (int i = 0; i < n_cons; ++i)
-        temp_host[i] = isfinite(original_problem->constraint_lower_bound[i]) ? original_problem->constraint_lower_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->constraint_lower_bound_finite_val, temp_host, con_bytes);
-    for (int i = 0; i < n_cons; ++i)
-        temp_host[i] = isfinite(original_problem->constraint_upper_bound[i]) ? original_problem->constraint_upper_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->constraint_upper_bound_finite_val, temp_host, con_bytes);
-    for (int i = 0; i < n_vars; ++i)
-        temp_host[i] = isfinite(original_problem->variable_lower_bound[i]) ? original_problem->variable_lower_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->variable_lower_bound_finite_val, temp_host, var_bytes);
-    for (int i = 0; i < n_vars; ++i)
-        temp_host[i] = isfinite(original_problem->variable_upper_bound[i]) ? original_problem->variable_upper_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->variable_upper_bound_finite_val, temp_host, var_bytes);
-    free(temp_host);
-
 #define ALLOC_ZERO(dest, bytes)           \
     CUDA_CHECK(cudaMalloc(&dest, bytes)); \
     CUDA_CHECK(cudaMemset(dest, 0, bytes));
@@ -350,6 +340,25 @@ static pdhg_solver_state_t *initialize_solver_state(
     rescale_info->con_rescale = NULL;
     rescale_info->var_rescale = NULL;
     rescale_info_free(rescale_info);
+
+    CUDA_CHECK(cudaMalloc(&state->constraint_lower_bound_finite_val, con_bytes));
+    CUDA_CHECK(cudaMalloc(&state->constraint_upper_bound_finite_val, con_bytes));
+    CUDA_CHECK(cudaMalloc(&state->variable_lower_bound_finite_val, var_bytes));
+    CUDA_CHECK(cudaMalloc(&state->variable_upper_bound_finite_val, var_bytes));
+
+    fill_finite_bounds_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->constraint_lower_bound,
+        state->constraint_upper_bound,
+        state->constraint_lower_bound_finite_val,
+        state->constraint_upper_bound_finite_val,
+        n_cons);
+
+    fill_finite_bounds_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->variable_lower_bound,
+        state->variable_upper_bound,
+        state->variable_lower_bound_finite_val,
+        state->variable_upper_bound_finite_val,
+        n_vars);
 
     CUDA_CHECK(cudaFree(state->constraint_matrix->row_ind));
     state->constraint_matrix->row_ind = NULL;
@@ -479,6 +488,24 @@ __global__ void build_transpose_map(
         return;
 
     A_to_At[k] = pos;
+}
+
+__global__ void fill_finite_bounds_kernel(
+    const double *__restrict__ lb,
+    const double *__restrict__ ub,
+    double *__restrict__ lb_finite,
+    double *__restrict__ ub_finite,
+    int num_elements)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_elements)
+        return;
+
+    double Li = lb[i];
+    double Ui = ub[i];
+
+    lb_finite[i] = isfinite(Li) ? Li : 0.0;
+    ub_finite[i] = isfinite(Ui) ? Ui : 0.0;
 }
 
 __global__ void compute_next_pdhg_primal_solution_kernel(
