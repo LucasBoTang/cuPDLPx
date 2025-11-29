@@ -217,7 +217,14 @@ static void pock_chambolle_rescaling(lp_problem_t *problem, double alpha,
 rescale_info_t *rescale_problem(const pdhg_parameters_t *params,
                                 const lp_problem_t *original_problem)
 {
+    printf("[Precondition] Start\n");
+
+    double ruiz_time_sec = 0.0;
+    double pc_time_sec = 0.0;
+    double bound_time_sec = 0.0;
+
     clock_t start_rescaling = clock();
+
     rescale_info_t *rescale_info =
         (rescale_info_t *)safe_calloc(1, sizeof(rescale_info_t));
     rescale_info->scaled_problem = deepcopy_problem(original_problem);
@@ -227,6 +234,7 @@ rescale_info_t *rescale_problem(const pdhg_parameters_t *params,
                 "Failed to create a copy of the problem. Aborting rescale.\n");
         return NULL;
     }
+
     int num_cons = original_problem->num_constraints;
     int num_vars = original_problem->num_variables;
 
@@ -236,43 +244,65 @@ rescale_info_t *rescale_problem(const pdhg_parameters_t *params,
         rescale_info->con_rescale[i] = 1.0;
     for (int i = 0; i < num_vars; ++i)
         rescale_info->var_rescale[i] = 1.0;
+
+    /* Ruiz scaling */
     if (params->l_inf_ruiz_iterations > 0)
     {
-        ruiz_rescaling(rescale_info->scaled_problem, params->l_inf_ruiz_iterations,
-                       rescale_info->con_rescale, rescale_info->var_rescale);
+        printf("[Precondition] Ruiz scaling (%d iterations)\n",
+               params->l_inf_ruiz_iterations);
+        clock_t ruiz_start = clock();
+        ruiz_rescaling(rescale_info->scaled_problem,
+                       params->l_inf_ruiz_iterations,
+                       rescale_info->con_rescale,
+                       rescale_info->var_rescale);
+        clock_t ruiz_end = clock();
+        ruiz_time_sec = (double)(ruiz_end - ruiz_start) / CLOCKS_PER_SEC;
+        printf("[Precondition] Ruiz scaling time        : %.6f sec\n",
+               ruiz_time_sec);
     }
+
     if (params->has_pock_chambolle_alpha)
     {
+        printf("[Precondition] Pock-Chambolle scaling (alpha=%.4f)\n",
+               params->pock_chambolle_alpha);
+        clock_t pc_start = clock();
         pock_chambolle_rescaling(
             rescale_info->scaled_problem, params->pock_chambolle_alpha,
             rescale_info->con_rescale, rescale_info->var_rescale);
+        clock_t pc_end = clock();
+        pc_time_sec = (double)(pc_end - pc_start) / CLOCKS_PER_SEC;
+        printf("[Precondition] Pock-Chambolle time      : %.6f sec\n",
+               pc_time_sec);
     }
+
     if (params->bound_objective_rescaling)
     {
+        printf("[Precondition] Bound-objective scaling\n");
+        clock_t bound_start = clock();
+
         double bound_norm_sq = 0.0;
         for (int i = 0; i < num_cons; ++i)
         {
-            if (isfinite(rescale_info->scaled_problem->constraint_lower_bound[i]) &&
-                (rescale_info->scaled_problem->constraint_lower_bound[i] !=
-                 rescale_info->scaled_problem->constraint_upper_bound[i]))
+            double Li = rescale_info->scaled_problem->constraint_lower_bound[i];
+            double Ui = rescale_info->scaled_problem->constraint_upper_bound[i];
+            int finite_L = isfinite(Li);
+            int finite_U = isfinite(Ui);
+
+            if (finite_L && (!finite_U || Li != Ui))
             {
-                bound_norm_sq +=
-                    rescale_info->scaled_problem->constraint_lower_bound[i] *
-                    rescale_info->scaled_problem->constraint_lower_bound[i];
+                bound_norm_sq += Li * Li;
             }
-            if (isfinite(rescale_info->scaled_problem->constraint_upper_bound[i]))
+            if (finite_U)
             {
-                bound_norm_sq +=
-                    rescale_info->scaled_problem->constraint_upper_bound[i] *
-                    rescale_info->scaled_problem->constraint_upper_bound[i];
+                bound_norm_sq += Ui * Ui;
             }
         }
 
         double obj_norm_sq = 0.0;
         for (int i = 0; i < num_vars; ++i)
         {
-            obj_norm_sq += rescale_info->scaled_problem->objective_vector[i] *
-                           rescale_info->scaled_problem->objective_vector[i];
+            double c = rescale_info->scaled_problem->objective_vector[i];
+            obj_norm_sq += c * c;
         }
 
         rescale_info->con_bound_rescale = 1.0 / (sqrt(bound_norm_sq) + 1.0);
@@ -294,13 +324,20 @@ rescale_info_t *rescale_problem(const pdhg_parameters_t *params,
             rescale_info->scaled_problem->objective_vector[i] *=
                 rescale_info->obj_vec_rescale;
         }
+
+        clock_t bound_end = clock();
+        bound_time_sec = (double)(bound_end - bound_start) / CLOCKS_PER_SEC;
+        printf("[Precondition] Bound-objective time     : %.6f sec\n",
+               bound_time_sec);
     }
     else
     {
         rescale_info->con_bound_rescale = 1.0;
         rescale_info->obj_vec_rescale = 1.0;
     }
+
     rescale_info->rescaling_time_sec =
         (double)(clock() - start_rescaling) / CLOCKS_PER_SEC;
+
     return rescale_info;
 }
