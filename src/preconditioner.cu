@@ -22,7 +22,7 @@ limitations under the License.
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
-#define SCALING_EPSILON 1e-8
+#define SCALING_EPSILON 1e-12
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
@@ -425,7 +425,7 @@ __global__ void clamp_sqrt_and_accum_kernel(double *__restrict__ scaling_factors
     for (int t = blockIdx.x * blockDim.x + threadIdx.x; t < num_variables; t += blockDim.x * gridDim.x)
     {
         double v = scaling_factors[t];
-        double s = sqrt(fmax(v, SCALING_EPSILON));
+        double s = (v < SCALING_EPSILON) ? 1.0 : sqrt(v);
         cumulative_rescaling[t] *= s;
         scaling_factors[t] = s;
         inverse_scaling_factors[t] = 1.0 / s;
