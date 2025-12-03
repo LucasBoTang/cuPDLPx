@@ -1,0 +1,885 @@
+Running benchmark: mittelmann
+Loaded 49 instances from mittelmann_instance.txt
+Instance: a2864  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/a2864.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.83334 sec
+  Iterations    : 6500
+  Solve time    : 1.64 sec
+  Primal obj    : -282.9706132
+  Dual obj      : -282.9818383
+  Primal infeas : 3.960e-05
+  Dual infeas   : 9.533e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/a2864.mps.gz
+--------------------------------------
+Instance: bdry2  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/bdry2.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.088698 sec
+  Iterations    : 33554200
+  Solve time    : 2.6e+03 sec
+  Primal obj    : 0.004177643673
+  Dual obj      : 0.004222602356
+  Primal infeas : 1.059e-06
+  Dual infeas   : 2.812e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/bdry2.mps.gz
+--------------------------------------
+Instance: cont1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/cont1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.023972 sec
+  Iterations    : 297200
+  Solve time    : 11.3 sec
+  Primal obj    : 0.01381827924
+  Dual obj      : 0.01373377409
+  Primal infeas : 3.427e-06
+  Dual infeas   : 6.370e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/cont1.mps.gz
+--------------------------------------
+Instance: cont11  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/cont11.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.026061 sec
+  Iterations    : 799200
+  Solve time    : 31.2 sec
+  Primal obj    : 61.08316858
+  Dual obj      : 61.07625882
+  Primal infeas : 2.570e-06
+  Dual infeas   : 2.512e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/cont11.mps.gz
+--------------------------------------
+Instance: datt256_lp  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/datt256_lp.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.075617 sec
+  Iterations    : 430
+  Solve time    : 0.0363 sec
+  Primal obj    : 255.9986547
+  Dual obj      : 255.9707266
+  Primal infeas : 4.320e-05
+  Dual infeas   : 5.221e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/datt256_lp.mps.gz
+--------------------------------------
+Instance: degme  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/degme.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.60983 sec
+  Iterations    : 8000
+  Solve time    : 1.23 sec
+  Primal obj    : -4693454.246
+  Dual obj      : -4694380.423
+  Primal infeas : 8.898e-05
+  Dual infeas   : 5.105e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/degme.mps.gz
+--------------------------------------
+Instance: dlr1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/dlr1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 1.3561 sec
+  Iterations    : 2095800
+  Solve time    : 1.38e+03 sec
+  Primal obj    : 2707083.257
+  Dual obj      : 2707084.861
+  Primal infeas : 1.786e-09
+  Dual infeas   : 9.997e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/dlr1.mps.gz
+--------------------------------------
+Instance: dlr2  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/dlr2.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 6.0254 sec
+  Iterations    : 2124000
+  Solve time    : 5.37e+03 sec
+  Primal obj    : 11601760.59
+  Dual obj      : 11601761.49
+  Primal infeas : 5.337e-10
+  Dual infeas   : 9.800e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/dlr2.mps.gz
+--------------------------------------
+Instance: Dual2_5000  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/Dual2_5000.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 7.6032 sec
+  Iterations    : 5200
+  Solve time    : 17.1 sec
+  Primal obj    : -9018.889692
+  Dual obj      : -9018.562565
+  Primal infeas : 4.787e-06
+  Dual infeas   : 1.515e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Dual2_5000.mps.gz
+--------------------------------------
+Instance: ex10  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/ex10.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.051196 sec
+  Iterations    : 500
+  Solve time    : 0.0392 sec
+  Primal obj    : 100.0029666
+  Dual obj      : 100.000878
+  Primal infeas : 7.602e-05
+  Dual infeas   : 8.275e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ex10.mps.gz
+--------------------------------------
+Instance: fhnw-binschedule1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/fhnw-binschedule1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.4675 sec
+  Iterations    : 137600
+  Solve time    : 28.2 sec
+  Primal obj    : 33392.8996
+  Dual obj      : 33386.36068
+  Primal infeas : 1.403e-11
+  Dual infeas   : 9.879e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/fhnw-binschedule1.mps.gz
+--------------------------------------
+Instance: fome13  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/fome13.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.029188 sec
+  Iterations    : 4700
+  Solve time    : 0.189 sec
+  Primal obj    : 90135289.24
+  Dual obj      : 90152011.38
+  Primal infeas : 1.035e-05
+  Dual infeas   : 3.412e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/fome13.mps.gz
+--------------------------------------
+Instance: graph40-40  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/graph40-40.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.073816 sec
+  Iterations    : 260
+  Solve time    : 0.0231 sec
+  Primal obj    : -300
+  Dual obj      : -300.0000006
+  Primal infeas : 5.827e-05
+  Dual infeas   : 4.249e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/graph40-40.mps.gz
+--------------------------------------
+Instance: irish-electricity  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/irish-electricity.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.026668 sec
+  Iterations    : 360200
+  Solve time    : 13.4 sec
+  Primal obj    : 2454404.014
+  Dual obj      : 2454418.333
+  Primal infeas : 2.529e-08
+  Dual infeas   : 9.858e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/irish-electricity.mps.gz
+--------------------------------------
+Instance: L1_sixm1000obs  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/L1_sixm1000obs.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.90325 sec
+  Iterations    : 30400
+  Solve time    : 11.2 sec
+  Primal obj    : 17199.14925
+  Dual obj      : 17199.14921
+  Primal infeas : 4.188e-05
+  Dual infeas   : 4.224e-11
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/L1_sixm1000obs.mps.gz
+--------------------------------------
+Instance: L1_sixm250obs  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/L1_sixm250obs.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.25543 sec
+  Iterations    : 12200
+  Solve time    : 1.7 sec
+  Primal obj    : 4629.462791
+  Dual obj      : 4629.462716
+  Primal infeas : 5.625e-05
+  Dual infeas   : 1.478e-10
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/L1_sixm250obs.mps.gz
+--------------------------------------
+Instance: L2CTA3D  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/L2CTA3D.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 2.2031 sec
+  Iterations    : 390
+  Solve time    : 0.348 sec
+  Primal obj    : -5.498182018e+12
+  Dual obj      : -5.498132305e+12
+  Primal infeas : 6.442e-05
+  Dual infeas   : 9.562e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/L2CTA3D.mps.gz
+--------------------------------------
+Instance: Linf_520c  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/Linf_520c.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.031307 sec
+  Iterations    : 73200
+  Solve time    : 2.79 sec
+  Primal obj    : 0.1988687642
+  Dual obj      : 0.198879354
+  Primal infeas : 1.751e-07
+  Dual infeas   : 4.527e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Linf_520c.mps.gz
+--------------------------------------
+Instance: neos  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/neos.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.070902 sec
+  Iterations    : 212000
+  Solve time    : 11.4 sec
+  Primal obj    : 225306739.9
+  Dual obj      : 225282649.8
+  Primal infeas : 7.868e-05
+  Dual infeas   : 2.203e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos.mps.gz
+--------------------------------------
+Instance: neos-3025225  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/neos-3025225.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.38304 sec
+  Iterations    : 20600
+  Solve time    : 2.73 sec
+  Primal obj    : 0.05257404303
+  Dual obj      : 0.05258447847
+  Primal infeas : 5.964e-10
+  Dual infeas   : 8.943e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos-3025225.mps.gz
+--------------------------------------
+Instance: neos-5052403-cygnet  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/neos-5052403-cygnet.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.19455 sec
+  Iterations    : 11200
+  Solve time    : 1.07 sec
+  Primal obj    : 179.4768727
+  Dual obj      : 179.5018088
+  Primal infeas : 3.456e-05
+  Dual infeas   : 9.929e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos-5052403-cygnet.mps.gz
+--------------------------------------
+Instance: neos-5251015  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/neos-5251015.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.10923 sec
+  Iterations    : 2400
+  Solve time    : 0.219 sec
+  Primal obj    : 0.1058000017
+  Dual obj      : 0.1058040132
+  Primal infeas : 6.394e-11
+  Dual infeas   : 4.888e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos-5251015.mps.gz
+--------------------------------------
+Instance: neos3  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/neos3.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.092231 sec
+  Iterations    : 1200
+  Solve time    : 0.107 sec
+  Primal obj    : 27777.52873
+  Dual obj      : 27778.49246
+  Primal infeas : 2.210e-05
+  Dual infeas   : 5.139e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos3.mps.gz
+--------------------------------------
+Instance: ns1687037  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/ns1687037.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : TIME_LIMIT
+  Precondition time : 0.060503 sec
+  Iterations    : 236967800
+  Solve time    : 1.5e+04 sec
+  Primal obj    : 4.644292231
+  Dual obj      : -251.7646827
+  Primal infeas : 5.359e-10
+  Dual infeas   : 3.431e-10
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ns1687037.mps.gz
+--------------------------------------
+Instance: ns1688926  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/ns1688926.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.06924 sec
+  Iterations    : 344400
+  Solve time    : 19.8 sec
+  Primal obj    : -58.99771766
+  Dual obj      : -59.00607289
+  Primal infeas : 8.138e-05
+  Dual infeas   : 2.631e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ns1688926.mps.gz
+--------------------------------------
+Instance: nug08-3rd  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/nug08-3rd.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.006958 sec
+  Iterations    : 1000
+  Solve time    : 0.049 sec
+  Primal obj    : 214.012691
+  Dual obj      : 213.9963626
+  Primal infeas : 9.094e-05
+  Dual infeas   : 1.109e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/nug08-3rd.mps.gz
+--------------------------------------
+Instance: pds-100  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/pds-100.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.09287 sec
+  Iterations    : 11200
+  Solve time    : 0.859 sec
+  Primal obj    : 1.092911429e+10
+  Dual obj      : 1.092823344e+10
+  Primal infeas : 3.999e-05
+  Dual infeas   : 1.121e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/pds-100.mps.gz
+--------------------------------------
+Instance: physiciansched3-3  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/physiciansched3-3.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.061314 sec
+  Iterations    : 52986800
+  Solve time    : 2.96e+03 sec
+  Primal obj    : 2432689.742
+  Dual obj      : 2432616.795
+  Primal infeas : 1.168e-09
+  Dual infeas   : 9.703e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/physiciansched3-3.mps.gz
+--------------------------------------
+Instance: Primal2_1000  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/Primal2_1000.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.44098 sec
+  Iterations    : 237800
+  Solve time    : 59.4 sec
+  Primal obj    : 393420227.3
+  Dual obj      : 393483736.1
+  Primal infeas : 8.062e-05
+  Dual infeas   : 2.698e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Primal2_1000.mps.gz
+--------------------------------------
+Instance: qap15  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/qap15.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.00463 sec
+  Iterations    : 2800
+  Solve time    : 0.107 sec
+  Primal obj    : 1041.015098
+  Dual obj      : 1040.986555
+  Primal infeas : 9.467e-05
+  Dual infeas   : 1.201e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/qap15.mps.gz
+--------------------------------------
+Instance: rail02  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/rail02.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.049734 sec
+  Iterations    : 127800
+  Solve time    : 6.04 sec
+  Primal obj    : -206.6075304
+  Dual obj      : -206.571295
+  Primal infeas : 3.776e-05
+  Dual infeas   : 1.821e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/rail02.mps.gz
+--------------------------------------
+Instance: rail4284  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/rail4284.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.68011 sec
+  Iterations    : 21400
+  Solve time    : 3.9 sec
+  Primal obj    : 1054.053815
+  Dual obj      : 1054.055814
+  Primal infeas : 9.686e-05
+  Dual infeas   : 1.030e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/rail4284.mps.gz
+--------------------------------------
+Instance: rmine15  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/rmine15.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.063089 sec
+  Iterations    : 22200
+  Solve time    : 1.15 sec
+  Primal obj    : -5042.139934
+  Dual obj      : -5042.473512
+  Primal infeas : 9.571e-05
+  Dual infeas   : 2.746e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/rmine15.mps.gz
+--------------------------------------
+Instance: s100  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/s100.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.10862 sec
+  Iterations    : 649200
+  Solve time    : 43.4 sec
+  Primal obj    : -0.1709620704
+  Dual obj      : -0.1710959959
+  Primal infeas : 9.753e-09
+  Dual infeas   : 8.285e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/s100.mps.gz
+--------------------------------------
+Instance: s250r10  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/s250r10.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.078551 sec
+  Iterations    : 64800
+  Solve time    : 4.03 sec
+  Primal obj    : -0.1727932267
+  Dual obj      : -0.172663133
+  Primal infeas : 3.081e-07
+  Dual infeas   : 1.113e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/s250r10.mps.gz
+--------------------------------------
+Instance: s82  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/s82.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.49358 sec
+  Iterations    : 1339000
+  Solve time    : 244 sec
+  Primal obj    : -34.59143149
+  Dual obj      : -34.58791649
+  Primal infeas : 2.342e-06
+  Dual infeas   : 9.527e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/s82.mps.gz
+--------------------------------------
+Instance: savsched1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/savsched1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.11787 sec
+  Iterations    : 630
+  Solve time    : 0.0663 sec
+  Primal obj    : 217.3679727
+  Dual obj      : 217.4087379
+  Primal infeas : 6.419e-07
+  Dual infeas   : 5.088e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/savsched1.mps.gz
+--------------------------------------
+Instance: scpm1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/scpm1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.44561 sec
+  Iterations    : 8000
+  Solve time    : 1.17 sec
+  Primal obj    : 413.7804685
+  Dual obj      : 413.7797977
+  Primal infeas : 9.872e-05
+  Dual infeas   : 2.301e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/scpm1.mps.gz
+--------------------------------------
+Instance: set-cover-model  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/set-cover-model.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 2.1454 sec
+  Iterations    : 20800
+  Solve time    : 7.5 sec
+  Primal obj    : 7581817875
+  Dual obj      : 7581843137
+  Primal infeas : 9.916e-05
+  Dual infeas   : 1.047e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/set-cover-model.mps.gz
+--------------------------------------
+Instance: shs1023  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/shs1023.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.071941 sec
+  Iterations    : 316400
+  Solve time    : 19.7 sec
+  Primal obj    : 12136.99097
+  Dual obj      : 12134.61257
+  Primal infeas : 3.341e-07
+  Dual infeas   : 5.661e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/shs1023.mps.gz
+--------------------------------------
+Instance: square41  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/square41.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.56093 sec
+  Iterations    : 194600
+  Solve time    : 30.5 sec
+  Primal obj    : 8.850301505
+  Dual obj      : 8.848519102
+  Primal infeas : 3.866e-05
+  Dual infeas   : 7.764e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/square41.mps.gz
+--------------------------------------
+Instance: stat96v2  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/stat96v2.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.16369 sec
+  Iterations    : 15200
+  Solve time    : 1.68 sec
+  Primal obj    : 3.826994779
+  Dual obj      : 3.826208047
+  Primal infeas : 1.153e-05
+  Dual infeas   : 6.955e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/stat96v2.mps.gz
+--------------------------------------
+Instance: stormG2_1000  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/stormG2_1000.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.24189 sec
+  Iterations    : 3900
+  Solve time    : 0.57 sec
+  Primal obj    : 15936714.42
+  Dual obj      : 15936973.91
+  Primal infeas : 8.396e-05
+  Dual infeas   : 6.438e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/stormG2_1000.mps.gz
+--------------------------------------
+Instance: stp3d  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/stp3d.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.044985 sec
+  Iterations    : 6900
+  Solve time    : 0.345 sec
+  Primal obj    : 481.8069203
+  Dual obj      : 481.8876886
+  Primal infeas : 8.608e-05
+  Dual infeas   : 1.371e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/stp3d.mps.gz
+--------------------------------------
+Instance: supportcase10  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/supportcase10.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.030869 sec
+  Iterations    : 18000
+  Solve time    : 0.726 sec
+  Primal obj    : 3.384031093
+  Dual obj      : 3.384307848
+  Primal infeas : 9.280e-07
+  Dual infeas   : 8.518e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/supportcase10.mps.gz
+--------------------------------------
+Instance: thk_48  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/thk_48.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 3.5092 sec
+  Iterations    : 18000
+  Solve time    : 17 sec
+  Primal obj    : 4638.27778
+  Dual obj      : 4637.741775
+  Primal infeas : 9.712e-05
+  Dual infeas   : 3.042e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/thk_48.mps.gz
+--------------------------------------
+Instance: thk_63  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/thk_63.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 2.9266 sec
+  Iterations    : 14200
+  Solve time    : 11.5 sec
+  Primal obj    : 1870.917625
+  Dual obj      : 1870.977406
+  Primal infeas : 1.516e-05
+  Dual infeas   : 5.609e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/thk_63.mps.gz
+--------------------------------------
+Instance: tpl-tub-ws1617  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/tpl-tub-ws1617.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.66628 sec
+  Iterations    : 11800
+  Solve time    : 2.12 sec
+  Primal obj    : 120710.0522
+  Dual obj      : 120695.5894
+  Primal infeas : 9.500e-05
+  Dual infeas   : 2.386e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/tpl-tub-ws1617.mps.gz
+--------------------------------------
+Instance: woodlands09  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251202/woodlands09.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status        : OPTIMAL
+  Precondition time : 0.13659 sec
+  Iterations    : 710
+  Solve time    : 0.0836 sec
+  Primal obj    : 0
+  Dual obj      : 4.337003911e-05
+  Primal infeas : 6.343e-05
+  Dual infeas   : 7.167e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/woodlands09.mps.gz
+--------------------------------------
+Benchmarking completed! Results saved in /home/botang/src/cuPDLPx/result/mittelmann_20251202

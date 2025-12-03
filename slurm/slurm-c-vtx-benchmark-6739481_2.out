@@ -1,7 +1,7 @@
 Running benchmark: mittelmann
 Loaded 49 instances from mittelmann_instance.txt
 Instance: woodlands09  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/woodlands09.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/woodlands09.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -9,27 +9,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.004386 sec
+  Precondition time : 0.004665 sec
   Iterations        : 710
-  Solve time        : 0.082 sec
+  Solve time        : 0.0824 sec
   Primal obj        : 0
   Dual obj          : 4.337003911e-05
   Primal infeas     : 6.343e-05
   Dual infeas       : 7.167e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 310
-  Primal Time Usage    : 0.031 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00116 sec
-  Primal Residual      : 9.987e-07
-  Dual Residual        : 8.500e-19
-  Primal Dual Gap      : 3.458e-08
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/woodlands09.mps.gz
 --------------------------------------
 Instance: tpl-tub-ws1617  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/tpl-tub-ws1617.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/tpl-tub-ws1617.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -37,27 +27,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.014993 sec
+  Precondition time : 0.011302 sec
   Iterations        : 11800
   Solve time        : 2.09 sec
   Primal obj        : 120710.0522
   Dual obj          : 120695.5894
   Primal infeas     : 9.500e-05
   Dual infeas       : 2.386e-07
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 930
-  Primal Time Usage    : 0.174 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000188 sec
-  Primal Residual      : 9.713e-07
-  Dual Residual        : 2.386e-07
-  Primal Dual Gap      : 4.340e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/tpl-tub-ws1617.mps.gz
 --------------------------------------
 Instance: thk_63  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/thk_63.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/thk_63.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -65,27 +45,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.028152 sec
+  Precondition time : 0.02647 sec
   Iterations        : 14200
-  Solve time        : 11.5 sec
+  Solve time        : 11.7 sec
   Primal obj        : 1870.917625
   Dual obj          : 1870.977406
   Primal infeas     : 1.516e-05
   Dual infeas       : 5.609e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 1600
-  Primal Time Usage    : 1.32 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00914 sec
-  Primal Residual      : 3.642e-07
-  Dual Residual        : 1.317e-16
-  Primal Dual Gap      : 1.252e-03
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/thk_63.mps.gz
 --------------------------------------
 Instance: thk_48  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/thk_48.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/thk_48.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -93,27 +63,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.032563 sec
+  Precondition time : 0.030736 sec
   Iterations        : 18000
-  Solve time        : 17 sec
+  Solve time        : 17.3 sec
   Primal obj        : 4638.27778
   Dual obj          : 4637.741775
   Primal infeas     : 9.712e-05
   Dual infeas       : 3.042e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 280
-  Primal Time Usage    : 0.275 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.0107 sec
-  Primal Residual      : 6.067e-07
-  Dual Residual        : 7.148e-16
-  Primal Dual Gap      : 1.428e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/thk_48.mps.gz
 --------------------------------------
 Instance: supportcase10  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/supportcase10.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/supportcase10.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -121,27 +81,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.00504 sec
+  Precondition time : 0.004934 sec
   Iterations        : 18000
-  Solve time        : 0.689 sec
+  Solve time        : 0.705 sec
   Primal obj        : 3.384031093
   Dual obj          : 3.384307848
   Primal infeas     : 9.280e-07
   Dual infeas       : 8.518e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000181 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000596 sec
-  Primal Residual      : 9.280e-07
-  Dual Residual        : 4.832e-17
-  Primal Dual Gap      : 1.671e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/supportcase10.mps.gz
 --------------------------------------
 Instance: stp3d  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/stp3d.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/stp3d.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -149,27 +99,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.003235 sec
+  Precondition time : 0.003045 sec
   Iterations        : 6900
   Solve time        : 0.331 sec
   Primal obj        : 481.8069203
   Dual obj          : 481.8876886
   Primal infeas     : 8.608e-05
   Dual infeas       : 1.371e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 790
-  Primal Time Usage    : 0.0412 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000664 sec
-  Primal Residual      : 9.526e-07
-  Dual Residual        : 2.971e-16
-  Primal Dual Gap      : 1.525e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/stp3d.mps.gz
 --------------------------------------
 Instance: stormG2_1000  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/stormG2_1000.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/stormG2_1000.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -177,27 +117,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.005975 sec
+  Precondition time : 0.006039 sec
   Iterations        : 3900
-  Solve time        : 0.576 sec
+  Solve time        : 0.569 sec
   Primal obj        : 15936714.42
   Dual obj          : 15936973.91
   Primal infeas     : 8.396e-05
   Dual infeas       : 6.438e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 1500
-  Primal Time Usage    : 0.219 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 1500
-  Dual Time Usage      : 0.225 sec
-  Primal Residual      : 7.398e-07
-  Dual Residual        : 3.966e-07
-  Primal Dual Gap      : 2.904e-02
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/stormG2_1000.mps.gz
 --------------------------------------
 Instance: stat96v2  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/stat96v2.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/stat96v2.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -205,27 +135,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.004204 sec
+  Precondition time : 0.003856 sec
   Iterations        : 15200
-  Solve time        : 1.66 sec
+  Solve time        : 1.67 sec
   Primal obj        : 3.826994779
   Dual obj          : 3.826208047
   Primal infeas     : 1.153e-05
   Dual infeas       : 6.955e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 2500
-  Primal Time Usage    : 0.273 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 99000
-  Dual Time Usage      : 10.5 sec
-  Primal Residual      : 8.370e-07
-  Dual Residual        : 9.993e-07
-  Primal Dual Gap      : 6.708e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/stat96v2.mps.gz
 --------------------------------------
 Instance: square41  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/square41.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/square41.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -233,27 +153,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.034817 sec
+  Precondition time : 0.034358 sec
   Iterations        : 194600
-  Solve time        : 30.6 sec
+  Solve time        : 31.1 sec
   Primal obj        : 8.850301505
   Dual obj          : 8.848519102
   Primal infeas     : 3.866e-05
   Dual infeas       : 7.764e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 12200
-  Primal Time Usage    : 1.92 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 850
-  Dual Time Usage      : 0.146 sec
-  Primal Residual      : 9.245e-07
-  Dual Residual        : 7.808e-07
-  Primal Dual Gap      : 1.716e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/square41.mps.gz
 --------------------------------------
 Instance: shs1023  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/shs1023.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/shs1023.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -261,27 +171,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.002659 sec
+  Precondition time : 0.00327 sec
   Iterations        : 316400
-  Solve time        : 19.4 sec
+  Solve time        : 18.8 sec
   Primal obj        : 12136.99097
   Dual obj          : 12134.61257
   Primal infeas     : 3.341e-07
   Dual infeas       : 5.661e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000191 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 60
-  Dual Time Usage      : 0.00442 sec
-  Primal Residual      : 3.341e-07
-  Dual Residual        : 7.558e-07
-  Primal Dual Gap      : 7.037e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/shs1023.mps.gz
 --------------------------------------
 Instance: set-cover-model  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/set-cover-model.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/set-cover-model.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -289,27 +189,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.029287 sec
+  Precondition time : 0.030015 sec
   Iterations        : 20800
-  Solve time        : 7.52 sec
+  Solve time        : 7.56 sec
   Primal obj        : 7581817875
   Dual obj          : 7581843137
   Primal infeas     : 9.916e-05
   Dual infeas       : 1.047e-07
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 120
-  Primal Time Usage    : 0.046 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000243 sec
-  Primal Residual      : 8.707e-07
-  Dual Residual        : 1.047e-07
-  Primal Dual Gap      : 1.503e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/set-cover-model.mps.gz
 --------------------------------------
 Instance: scpm1  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/scpm1.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/scpm1.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -317,27 +207,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.008586 sec
+  Precondition time : 0.009288 sec
   Iterations        : 8000
-  Solve time        : 1.16 sec
+  Solve time        : 1.17 sec
   Primal obj        : 413.7804685
   Dual obj          : 413.7797977
   Primal infeas     : 9.872e-05
   Dual infeas       : 2.301e-07
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 110
-  Primal Time Usage    : 0.0168 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000154 sec
-  Primal Residual      : 7.518e-07
-  Dual Residual        : 2.301e-07
-  Primal Dual Gap      : 1.520e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/scpm1.mps.gz
 --------------------------------------
 Instance: savsched1  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/savsched1.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/savsched1.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -345,27 +225,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.004311 sec
+  Precondition time : 0.004883 sec
   Iterations        : 630
-  Solve time        : 0.065 sec
+  Solve time        : 0.0639 sec
   Primal obj        : 217.3679727
   Dual obj          : 217.4087379
   Primal infeas     : 6.419e-07
   Dual infeas       : 5.088e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.00012 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00106 sec
-  Primal Residual      : 6.419e-07
-  Dual Residual        : 7.519e-07
-  Primal Dual Gap      : 8.418e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/savsched1.mps.gz
 --------------------------------------
 Instance: s82  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/s82.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/s82.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -373,27 +243,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.32675 sec
+  Precondition time : 0.32519 sec
   Iterations        : 1339000
   Solve time        : 244 sec
   Primal obj        : -34.59143149
   Dual obj          : -34.58791649
   Primal infeas     : 2.342e-06
   Dual infeas       : 9.527e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 10
-  Primal Time Usage    : 0.00214 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.0022 sec
-  Primal Residual      : 2.732e-07
-  Dual Residual        : 2.143e-17
-  Primal Dual Gap      : 1.026e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/s82.mps.gz
 --------------------------------------
 Instance: s250r10  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/s250r10.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/s250r10.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -401,27 +261,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.028925 sec
+  Precondition time : 0.029296 sec
   Iterations        : 64800
-  Solve time        : 4.04 sec
+  Solve time        : 3.93 sec
   Primal obj        : -0.1727932267
   Dual obj          : -0.172663133
   Primal infeas     : 3.081e-07
   Dual infeas       : 1.113e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000172 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000861 sec
-  Primal Residual      : 3.081e-07
-  Dual Residual        : 1.551e-17
-  Primal Dual Gap      : 6.799e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/s250r10.mps.gz
 --------------------------------------
 Instance: s100  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/s100.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/s100.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -429,27 +279,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.076623 sec
+  Precondition time : 0.076507 sec
   Iterations        : 649200
-  Solve time        : 44 sec
+  Solve time        : 44.4 sec
   Primal obj        : -0.1709620704
   Dual obj          : -0.1710959959
   Primal infeas     : 9.753e-09
   Dual infeas       : 8.285e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000162 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000921 sec
-  Primal Residual      : 9.753e-09
-  Dual Residual        : 1.765e-17
-  Primal Dual Gap      : 9.892e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/s100.mps.gz
 --------------------------------------
 Instance: rmine15  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/rmine15.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/rmine15.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -457,27 +297,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.007722 sec
+  Precondition time : 0.007747 sec
   Iterations        : 22200
   Solve time        : 1.12 sec
   Primal obj        : -5042.139934
   Dual obj          : -5042.473512
   Primal infeas     : 9.571e-05
   Dual infeas       : 2.746e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 90
-  Primal Time Usage    : 0.00526 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000714 sec
-  Primal Residual      : 8.006e-10
-  Dual Residual        : 6.725e-17
-  Primal Dual Gap      : 8.482e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/rmine15.mps.gz
 --------------------------------------
 Instance: rail4284  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/rail4284.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/rail4284.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -485,27 +315,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.057361 sec
+  Precondition time : 0.058015 sec
   Iterations        : 21400
-  Solve time        : 3.89 sec
+  Solve time        : 3.93 sec
   Primal obj        : 1054.053815
   Dual obj          : 1054.055814
   Primal infeas     : 9.686e-05
   Dual infeas       : 1.030e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 90
-  Primal Time Usage    : 0.0174 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 60
-  Dual Time Usage      : 0.012 sec
-  Primal Residual      : 9.487e-07
-  Dual Residual        : 9.162e-07
-  Primal Dual Gap      : 3.308e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/rail4284.mps.gz
 --------------------------------------
 Instance: rail02  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/rail02.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/rail02.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -513,27 +333,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.003885 sec
+  Precondition time : 0.003902 sec
   Iterations        : 127800
-  Solve time        : 5.9 sec
+  Solve time        : 5.74 sec
   Primal obj        : -206.6075304
   Dual obj          : -206.571295
   Primal infeas     : 3.776e-05
   Dual infeas       : 1.821e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 17400
-  Primal Time Usage    : 0.815 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000698 sec
-  Primal Residual      : 9.629e-07
-  Dual Residual        : 1.429e-15
-  Primal Dual Gap      : 7.398e-06
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/rail02.mps.gz
 --------------------------------------
 Instance: qap15  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/qap15.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/qap15.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -541,27 +351,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.002763 sec
+  Precondition time : 0.002261 sec
   Iterations        : 2800
-  Solve time        : 0.105 sec
+  Solve time        : 0.0994 sec
   Primal obj        : 1041.015098
   Dual obj          : 1040.986555
   Primal infeas     : 9.467e-05
   Dual infeas       : 1.201e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 140
-  Primal Time Usage    : 0.00519 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 30
-  Dual Time Usage      : 0.00124 sec
-  Primal Residual      : 8.561e-07
-  Dual Residual        : 4.039e-07
-  Primal Dual Gap      : 2.629e-07
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/qap15.mps.gz
 --------------------------------------
 Instance: Primal2_1000  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/Primal2_1000.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/Primal2_1000.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -569,27 +369,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.007105 sec
+  Precondition time : 0.006474 sec
   Iterations        : 237800
-  Solve time        : 59.3 sec
+  Solve time        : 59.5 sec
   Primal obj        : 393420227.3
   Dual obj          : 393483736.1
   Primal infeas     : 8.062e-05
   Dual infeas       : 2.698e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 60
-  Primal Time Usage    : 0.0161 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00297 sec
-  Primal Residual      : 9.406e-07
-  Dual Residual        : 1.720e-07
-  Primal Dual Gap      : 2.920e-06
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Primal2_1000.mps.gz
 --------------------------------------
 Instance: physiciansched3-3  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/physiciansched3-3.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/physiciansched3-3.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -597,27 +387,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.005262 sec
+  Precondition time : 0.005049 sec
   Iterations        : 54340200
-  Solve time        : 3.13e+03 sec
+  Solve time        : 3.14e+03 sec
   Primal obj        : 2432694.06
   Dual obj          : 2432526.403
   Primal infeas     : 1.641e-10
   Dual infeas       : 6.454e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000171 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000816 sec
-  Primal Residual      : 1.641e-10
-  Dual Residual        : 8.610e-07
-  Primal Dual Gap      : 7.992e-07
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/physiciansched3-3.mps.gz
 --------------------------------------
 Instance: pds-100  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/pds-100.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/pds-100.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -625,27 +405,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.002885 sec
+  Precondition time : 0.003517 sec
   Iterations        : 11200
-  Solve time        : 0.859 sec
+  Solve time        : 0.844 sec
   Primal obj        : 1.092911429e+10
   Dual obj          : 1.092823344e+10
   Primal infeas     : 3.999e-05
   Dual infeas       : 1.121e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 400
-  Primal Time Usage    : 0.0331 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000973 sec
-  Primal Residual      : 8.594e-07
-  Dual Residual        : 8.308e-08
-  Primal Dual Gap      : 5.977e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/pds-100.mps.gz
 --------------------------------------
 Instance: nug08-3rd  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/nug08-3rd.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/nug08-3rd.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -653,27 +423,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.002891 sec
+  Precondition time : 0.002278 sec
   Iterations        : 1000
-  Solve time        : 0.0486 sec
+  Solve time        : 0.0475 sec
   Primal obj        : 214.012691
   Dual obj          : 213.9963626
   Primal infeas     : 9.094e-05
   Dual infeas       : 1.109e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 100
-  Primal Time Usage    : 0.00386 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000506 sec
-  Primal Residual      : 9.004e-07
-  Dual Residual        : 1.039e-07
-  Primal Dual Gap      : 5.006e-07
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/nug08-3rd.mps.gz
 --------------------------------------
 Instance: ns1688926  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/ns1688926.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/ns1688926.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -681,27 +441,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.013886 sec
+  Precondition time : 0.013075 sec
   Iterations        : 344400
-  Solve time        : 19.9 sec
+  Solve time        : 19.7 sec
   Primal obj        : -58.99771766
   Dual obj          : -59.00607289
   Primal infeas     : 8.138e-05
   Dual infeas       : 2.631e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 38200
-  Primal Time Usage    : 2.18 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000787 sec
-  Primal Residual      : 9.937e-07
-  Dual Residual        : 4.313e-16
-  Primal Dual Gap      : 1.093e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ns1688926.mps.gz
 --------------------------------------
 Instance: ns1687037  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/ns1687037.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/ns1687037.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -709,18 +459,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : TIME_LIMIT
-  Precondition time : 0.005073 sec
-  Iterations        : 248203400
+  Precondition time : 0.004659 sec
+  Iterations        : 238810600
   Solve time        : 1.5e+04 sec
-  Primal obj        : 4.645018646
-  Dual obj          : -249.7079833
-  Primal infeas     : 8.048e-10
-  Dual infeas       : 3.589e-10
-Skipping feasibility polishing as the solution is already sufficiently feasible.
+  Primal obj        : 4.607779181
+  Dual obj          : -251.0683244
+  Primal infeas     : 5.994e-10
+  Dual infeas       : 3.500e-10
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ns1687037.mps.gz
 --------------------------------------
 Instance: neos3  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/neos3.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/neos3.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -728,27 +477,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.008042 sec
+  Precondition time : 0.007077 sec
   Iterations        : 1200
   Solve time        : 0.107 sec
   Primal obj        : 27777.52873
   Dual obj          : 27778.49246
   Primal infeas     : 2.210e-05
   Dual infeas       : 5.139e-07
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 20
-  Primal Time Usage    : 0.00171 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000138 sec
-  Primal Residual      : 5.767e-07
-  Dual Residual        : 5.139e-07
-  Primal Dual Gap      : 7.086e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos3.mps.gz
 --------------------------------------
 Instance: neos-5251015  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/neos-5251015.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/neos-5251015.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -756,27 +495,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.007368 sec
+  Precondition time : 0.006262 sec
   Iterations        : 2400
-  Solve time        : 0.217 sec
+  Solve time        : 0.213 sec
   Primal obj        : 0.1058000017
   Dual obj          : 0.1058040132
   Primal infeas     : 6.394e-11
   Dual infeas       : 4.888e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.00013 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 50
-  Dual Time Usage      : 0.00452 sec
-  Primal Residual      : 6.394e-11
-  Dual Residual        : 5.306e-07
-  Primal Dual Gap      : 2.699e-03
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos-5251015.mps.gz
 --------------------------------------
 Instance: neos-5052403-cygnet  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/neos-5052403-cygnet.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/neos-5052403-cygnet.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -784,27 +513,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.006657 sec
+  Precondition time : 0.0054 sec
   Iterations        : 11200
-  Solve time        : 1.05 sec
+  Solve time        : 1.07 sec
   Primal obj        : 179.4768727
   Dual obj          : 179.5018088
   Primal infeas     : 3.456e-05
   Dual infeas       : 9.929e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 130
-  Primal Time Usage    : 0.0132 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00117 sec
-  Primal Residual      : 8.208e-07
-  Dual Residual        : 4.644e-18
-  Primal Dual Gap      : 2.323e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos-5052403-cygnet.mps.gz
 --------------------------------------
 Instance: neos-3025225  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/neos-3025225.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/neos-3025225.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -812,27 +531,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.096858 sec
+  Precondition time : 0.095278 sec
   Iterations        : 20600
-  Solve time        : 2.75 sec
+  Solve time        : 2.74 sec
   Primal obj        : 0.05257404303
   Dual obj          : 0.05258447847
   Primal infeas     : 5.964e-10
   Dual infeas       : 8.943e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000226 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 150
-  Dual Time Usage      : 0.022 sec
-  Primal Residual      : 5.964e-10
-  Dual Residual        : 7.200e-07
-  Primal Dual Gap      : 7.200e-08
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos-3025225.mps.gz
 --------------------------------------
 Instance: neos  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/neos.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/neos.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -840,27 +549,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.016025 sec
+  Precondition time : 0.013811 sec
   Iterations        : 212000
-  Solve time        : 11.6 sec
+  Solve time        : 11.3 sec
   Primal obj        : 225306739.9
   Dual obj          : 225282649.8
   Primal infeas     : 7.868e-05
   Dual infeas       : 2.203e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 2300
-  Primal Time Usage    : 0.131 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 2900
-  Dual Time Usage      : 0.168 sec
-  Primal Residual      : 9.962e-07
-  Dual Residual        : 8.954e-07
-  Primal Dual Gap      : 2.217e-04
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/neos.mps.gz
 --------------------------------------
 Instance: Linf_520c  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/Linf_520c.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/Linf_520c.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -868,27 +567,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.01556 sec
+  Precondition time : 0.014573 sec
   Iterations        : 73200
-  Solve time        : 2.92 sec
+  Solve time        : 2.79 sec
   Primal obj        : 0.1988687642
   Dual obj          : 0.198879354
   Primal infeas     : 1.751e-07
   Dual infeas       : 4.527e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000199 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 730
-  Dual Time Usage      : 0.0366 sec
-  Primal Residual      : 1.751e-07
-  Dual Residual        : 9.835e-07
-  Primal Dual Gap      : 6.523e-08
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Linf_520c.mps.gz
 --------------------------------------
 Instance: L2CTA3D  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/L2CTA3D.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/L2CTA3D.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -896,27 +585,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.025282 sec
+  Precondition time : 0.023384 sec
   Iterations        : 390
-  Solve time        : 0.349 sec
+  Solve time        : 0.352 sec
   Primal obj        : -5.498182018e+12
   Dual obj          : -5.498132305e+12
   Primal infeas     : 6.442e-05
   Dual infeas       : 9.562e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 210
-  Primal Time Usage    : 0.174 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00907 sec
-  Primal Residual      : 2.126e-07
-  Dual Residual        : 1.149e-17
-  Primal Dual Gap      : 9.847e-08
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/L2CTA3D.mps.gz
 --------------------------------------
 Instance: L1_sixm250obs  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/L1_sixm250obs.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/L1_sixm250obs.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -924,27 +603,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.006509 sec
+  Precondition time : 0.006275 sec
   Iterations        : 12200
   Solve time        : 1.71 sec
   Primal obj        : 4629.462791
   Dual obj          : 4629.462716
   Primal infeas     : 5.625e-05
   Dual infeas       : 1.478e-10
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 190
-  Primal Time Usage    : 0.0284 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000188 sec
-  Primal Residual      : 9.232e-07
-  Dual Residual        : 1.478e-10
-  Primal Dual Gap      : 8.489e-09
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/L1_sixm250obs.mps.gz
 --------------------------------------
 Instance: L1_sixm1000obs  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/L1_sixm1000obs.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/L1_sixm1000obs.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -952,27 +621,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.018176 sec
+  Precondition time : 0.017662 sec
   Iterations        : 30400
-  Solve time        : 11.2 sec
+  Solve time        : 11.3 sec
   Primal obj        : 17199.14925
   Dual obj          : 17199.14921
   Primal infeas     : 4.188e-05
   Dual infeas       : 4.224e-11
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 210
-  Primal Time Usage    : 0.0822 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000316 sec
-  Primal Residual      : 5.214e-07
-  Dual Residual        : 4.224e-11
-  Primal Dual Gap      : 1.273e-09
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/L1_sixm1000obs.mps.gz
 --------------------------------------
 Instance: irish-electricity  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/irish-electricity.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/irish-electricity.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -980,279 +639,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.003725 sec
+  Precondition time : 0.002596 sec
   Iterations        : 360200
-  Solve time        : 13.7 sec
+  Solve time        : 14 sec
   Primal obj        : 2454404.014
   Dual obj          : 2454418.333
   Primal infeas     : 2.529e-08
   Dual infeas       : 9.858e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000204 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 150
-  Dual Time Usage      : 0.00737 sec
-  Primal Residual      : 2.529e-08
-  Dual Residual        : 7.439e-07
-  Primal Dual Gap      : 2.896e-06
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/irish-electricity.mps.gz
 --------------------------------------
 Instance: graph40-40  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/graph40-40.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.003852 sec
-  Iterations        : 260
-  Solve time        : 0.0246 sec
-  Primal obj        : -300
-  Dual obj          : -300.0000006
-  Primal infeas     : 5.827e-05
-  Dual infeas       : 4.249e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 70
-  Primal Time Usage    : 0.00529 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000901 sec
-  Primal Residual      : 9.066e-07
-  Dual Residual        : 1.413e-19
-  Primal Dual Gap      : 6.650e-10
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/graph40-40.mps.gz
---------------------------------------
-Instance: fome13  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/fome13.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.003507 sec
-  Iterations        : 4700
-  Solve time        : 0.196 sec
-  Primal obj        : 90135289.24
-  Dual obj          : 90152011.38
-  Primal infeas     : 1.035e-05
-  Dual infeas       : 3.412e-07
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 130
-  Primal Time Usage    : 0.00581 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.000117 sec
-  Primal Residual      : 7.890e-07
-  Dual Residual        : 3.412e-07
-  Primal Dual Gap      : 6.370e-05
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/fome13.mps.gz
---------------------------------------
-Instance: fhnw-binschedule1  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/fhnw-binschedule1.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.34989 sec
-  Iterations        : 137600
-  Solve time        : 28.2 sec
-  Primal obj        : 33392.8996
-  Dual obj          : 33386.36068
-  Primal infeas     : 1.403e-11
-  Dual infeas       : 9.879e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.000244 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00246 sec
-  Primal Residual      : 1.403e-11
-  Dual Residual        : 2.207e-13
-  Primal Dual Gap      : 7.466e-08
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/fhnw-binschedule1.mps.gz
---------------------------------------
-Instance: ex10  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/ex10.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.004351 sec
-  Iterations        : 500
-  Solve time        : 0.0403 sec
-  Primal obj        : 100.0029666
-  Dual obj          : 100.000878
-  Primal infeas     : 7.602e-05
-  Dual infeas       : 8.275e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 1700
-  Primal Time Usage    : 0.105 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000801 sec
-  Primal Residual      : 1.292e-07
-  Dual Residual        : 1.989e-17
-  Primal Dual Gap      : 6.890e-09
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ex10.mps.gz
---------------------------------------
-Instance: Dual2_5000  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/Dual2_5000.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.10381 sec
-  Iterations        : 5200
-  Solve time        : 17 sec
-  Primal obj        : -9018.889692
-  Dual obj          : -9018.562565
-  Primal infeas     : 4.787e-06
-  Dual infeas       : 1.515e-07
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 200
-  Primal Time Usage    : 0.675 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 0
-  Dual Time Usage      : 0.00277 sec
-  Primal Residual      : 8.043e-07
-  Dual Residual        : 1.515e-07
-  Primal Dual Gap      : 1.586e-05
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Dual2_5000.mps.gz
---------------------------------------
-Instance: dlr2  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/dlr2.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.15699 sec
-  Iterations        : 2124000
-  Solve time        : 5.37e+03 sec
-  Primal obj        : 11601760.59
-  Dual obj          : 11601761.49
-  Primal infeas     : 5.337e-10
-  Dual infeas       : 9.800e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.0034 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 5300
-  Dual Time Usage      : 13.6 sec
-  Primal Residual      : 5.337e-10
-  Dual Residual        : 9.986e-07
-  Primal Dual Gap      : 5.813e-07
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/dlr2.mps.gz
---------------------------------------
-Instance: dlr1  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/dlr1.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.065237 sec
-  Iterations        : 2095800
-  Solve time        : 1.38e+03 sec
-  Primal obj        : 2707083.257
-  Dual obj          : 2707084.861
-  Primal infeas     : 1.785e-09
-  Dual infeas       : 9.997e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 0
-  Primal Time Usage    : 0.00034 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 3100
-  Dual Time Usage      : 2.09 sec
-  Primal Residual      : 1.785e-09
-  Dual Residual        : 4.565e-07
-  Primal Dual Gap      : 1.129e-07
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/dlr1.mps.gz
---------------------------------------
-Instance: degme  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/degme.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.40812 sec
-  Iterations        : 8000
-  Solve time        : 1.23 sec
-  Primal obj        : -4693454.246
-  Dual obj          : -4694380.423
-  Primal infeas     : 8.898e-05
-  Dual infeas       : 5.105e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 270
-  Primal Time Usage    : 0.0435 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 40
-  Dual Time Usage      : 0.00674 sec
-  Primal Residual      : 2.465e-07
-  Dual Residual        : 8.578e-07
-  Primal Dual Gap      : 1.121e-07
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/degme.mps.gz
---------------------------------------
-Instance: datt256_lp  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/datt256_lp.txt
-Using timelimit = 15000s
-[Precondition] Start
-[Precondition] Ruiz scaling (10 iterations)
-[Precondition] Pock-Chambolle scaling (alpha=1.0000)
-[Precondition] Bound-objective scaling
-Solution Summary
-  Status            : OPTIMAL
-  Precondition time : 0.028775 sec
-  Iterations        : 430
-  Solve time        : 0.0378 sec
-  Primal obj        : 255.9986547
-  Dual obj          : 255.9707266
-  Primal infeas     : 4.320e-05
-  Dual infeas       : 5.221e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 230
-  Primal Time Usage    : 0.0166 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00088 sec
-  Primal Residual      : 8.371e-07
-  Dual Residual        : 5.237e-17
-  Primal Dual Gap      : 6.388e-08
-Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/datt256_lp.mps.gz
---------------------------------------
-Instance: cont11  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/cont11.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/graph40-40.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -1261,26 +658,178 @@ Using timelimit = 15000s
 Solution Summary
   Status            : OPTIMAL
   Precondition time : 0.002929 sec
+  Iterations        : 260
+  Solve time        : 0.0233 sec
+  Primal obj        : -300
+  Dual obj          : -300.0000006
+  Primal infeas     : 5.827e-05
+  Dual infeas       : 4.249e-06
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/graph40-40.mps.gz
+--------------------------------------
+Instance: fome13  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/fome13.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.002508 sec
+  Iterations        : 4700
+  Solve time        : 0.187 sec
+  Primal obj        : 90135289.24
+  Dual obj          : 90152011.38
+  Primal infeas     : 1.035e-05
+  Dual infeas       : 3.412e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/fome13.mps.gz
+--------------------------------------
+Instance: fhnw-binschedule1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/fhnw-binschedule1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.35048 sec
+  Iterations        : 137600
+  Solve time        : 28.3 sec
+  Primal obj        : 33392.8996
+  Dual obj          : 33386.36068
+  Primal infeas     : 1.403e-11
+  Dual infeas       : 9.879e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/fhnw-binschedule1.mps.gz
+--------------------------------------
+Instance: ex10  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/ex10.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.003117 sec
+  Iterations        : 500
+  Solve time        : 0.0396 sec
+  Primal obj        : 100.0029666
+  Dual obj          : 100.000878
+  Primal infeas     : 7.602e-05
+  Dual infeas       : 8.275e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/ex10.mps.gz
+--------------------------------------
+Instance: Dual2_5000  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/Dual2_5000.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.096565 sec
+  Iterations        : 5200
+  Solve time        : 17.3 sec
+  Primal obj        : -9018.889692
+  Dual obj          : -9018.562565
+  Primal infeas     : 4.787e-06
+  Dual infeas       : 1.515e-07
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/Dual2_5000.mps.gz
+--------------------------------------
+Instance: dlr2  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/dlr2.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.15127 sec
+  Iterations        : 2124000
+  Solve time        : 5.45e+03 sec
+  Primal obj        : 11601760.59
+  Dual obj          : 11601761.49
+  Primal infeas     : 5.337e-10
+  Dual infeas       : 9.800e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/dlr2.mps.gz
+--------------------------------------
+Instance: dlr1  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/dlr1.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.064396 sec
+  Iterations        : 2095800
+  Solve time        : 1.39e+03 sec
+  Primal obj        : 2707083.257
+  Dual obj          : 2707084.861
+  Primal infeas     : 1.785e-09
+  Dual infeas       : 9.997e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/dlr1.mps.gz
+--------------------------------------
+Instance: degme  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/degme.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.40652 sec
+  Iterations        : 8000
+  Solve time        : 1.25 sec
+  Primal obj        : -4693454.246
+  Dual obj          : -4694380.423
+  Primal infeas     : 8.898e-05
+  Dual infeas       : 5.105e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/degme.mps.gz
+--------------------------------------
+Instance: datt256_lp  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/datt256_lp.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.031407 sec
+  Iterations        : 430
+  Solve time        : 0.0356 sec
+  Primal obj        : 255.9986547
+  Dual obj          : 255.9707266
+  Primal infeas     : 4.320e-05
+  Dual infeas       : 5.221e-05
+Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/datt256_lp.mps.gz
+--------------------------------------
+Instance: cont11  | Class: N/A
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/cont11.txt
+Using timelimit = 15000s
+[Precondition] Start
+[Precondition] Ruiz scaling (10 iterations)
+[Precondition] Pock-Chambolle scaling (alpha=1.0000)
+[Precondition] Bound-objective scaling
+Solution Summary
+  Status            : OPTIMAL
+  Precondition time : 0.002491 sec
   Iterations        : 799200
-  Solve time        : 29.8 sec
+  Solve time        : 29.9 sec
   Primal obj        : 61.08316857
   Dual obj          : 61.07625882
   Primal infeas     : 2.570e-06
   Dual infeas       : 2.512e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 1500
-  Primal Time Usage    : 0.064 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.000595 sec
-  Primal Residual      : 9.814e-07
-  Dual Residual        : 4.788e-07
-  Primal Dual Gap      : 5.934e-03
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/cont11.mps.gz
 --------------------------------------
 Instance: cont1  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/cont1.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/cont1.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -1288,27 +837,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.033682 sec
+  Precondition time : 0.032921 sec
   Iterations        : 297200
-  Solve time        : 11.3 sec
+  Solve time        : 10.8 sec
   Primal obj        : 0.01381827924
   Dual obj          : 0.01373377409
   Primal infeas     : 3.427e-06
   Dual infeas       : 6.370e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 29000
-  Primal Time Usage    : 1.1 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 210
-  Dual Time Usage      : 0.0101 sec
-  Primal Residual      : 9.975e-07
-  Dual Residual        : 8.134e-08
-  Primal Dual Gap      : 2.993e-02
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/cont1.mps.gz
 --------------------------------------
 Instance: bdry2  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/bdry2.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/bdry2.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -1316,27 +855,17 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.081141 sec
+  Precondition time : 0.080851 sec
   Iterations        : 33558800
-  Solve time        : 2.51e+03 sec
+  Solve time        : 2.49e+03 sec
   Primal obj        : 0.004177664638
   Dual obj          : 0.004227880325
   Primal infeas     : 1.092e-06
   Dual infeas       : 2.841e-06
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 826600
-  Primal Time Usage    : 61.8 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 1500
-  Dual Time Usage      : 0.123 sec
-  Primal Residual      : 9.998e-07
-  Dual Residual        : 5.646e-07
-  Primal Dual Gap      : 7.316e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/bdry2.mps.gz
 --------------------------------------
 Instance: a2864  | Class: N/A
-Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251121/a2864.txt
+Summary file: /home/botang/src/cuPDLPx/result/mittelmann_20251129/a2864.txt
 Using timelimit = 15000s
 [Precondition] Start
 [Precondition] Ruiz scaling (10 iterations)
@@ -1344,23 +873,13 @@ Using timelimit = 15000s
 [Precondition] Bound-objective scaling
 Solution Summary
   Status            : OPTIMAL
-  Precondition time : 0.029343 sec
+  Precondition time : 0.029306 sec
   Iterations        : 6500
-  Solve time        : 1.65 sec
+  Solve time        : 1.64 sec
   Primal obj        : -282.9706132
   Dual obj          : -282.9818383
   Primal infeas     : 3.960e-05
   Dual infeas       : 9.533e-05
-Feasibility Polishing Summary
-  Primal Status        : FEAS_POLISH_SUCCESS
-  Primal Iterations    : 50
-  Primal Time Usage    : 0.0133 sec
-  Dual Status          : FEAS_POLISH_SUCCESS
-  Dual Iterations      : 10
-  Dual Time Usage      : 0.00286 sec
-  Primal Residual      : 5.828e-07
-  Dual Residual        : 5.257e-18
-  Primal Dual Gap      : 1.417e-05
 Finished: /nfs/sloanlab007/projects/pdopt_proj/instances/lp/mittelmann/a2864.mps.gz
 --------------------------------------
-Benchmarking completed! Results saved in /home/botang/src/cuPDLPx/result/mittelmann_20251121
+Benchmarking completed! Results saved in /home/botang/src/cuPDLPx/result/mittelmann_20251129
