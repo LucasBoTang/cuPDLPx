@@ -307,6 +307,15 @@ rescale_info_t *rescale_problem(
     return rescale_info;
 }
 
+void apply_diagonal_scaling(const pdhg_parameters_t *params,
+                            pdhg_solver_state_t *state)
+{
+    printf("[Adaptive Scaling] Diagonal Scaling\n");
+
+    int num_variables = state->num_variables;
+    int num_constraints = state->num_constraints;
+}
+
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
                                        double *__restrict__ variable_upper_bound,

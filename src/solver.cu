@@ -180,6 +180,11 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
         }
         halpern_update(state, params->reflection_coefficient);
 
+        if (state->total_count + 1 == 10000)
+        {
+            apply_diagonal_scaling(params, state);
+        }
+
         state->inner_count++;
         state->total_count++;
     }
