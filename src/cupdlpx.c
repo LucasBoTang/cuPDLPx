@@ -110,7 +110,7 @@ lp_problem_t *create_lp_problem(const double *objective_c,
     // default fill values
     prob->objective_constant = objective_constant ? *objective_constant : 0.0;
     fill_or_copy(&prob->objective_vector, prob->num_variables, objective_c, 0.0);
-    fill_or_copy(&prob->variable_lower_bound, prob->num_variables, var_lb, 0.0);
+    fill_or_copy(&prob->variable_lower_bound, prob->num_variables, var_lb, -INFINITY);
     fill_or_copy(&prob->variable_upper_bound, prob->num_variables, var_ub,
                  INFINITY);
     fill_or_copy(&prob->constraint_lower_bound, prob->num_constraints, con_lb,
