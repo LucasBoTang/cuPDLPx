@@ -26,8 +26,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# Increase compatibility by compiling for all supported real and virtual architectures.
-set(CMAKE_CUDA_ARCHITECTURES all)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+    set(CMAKE_CUDA_ARCHITECTURES all)
+else()
+    set(CMAKE_CUDA_ARCHITECTURES 60 61 70 75 80 86 89 90 90-virtual)
+endif()
 
 # Global Compile flags (corresponding to CFLAGS/NVCCFLAGS)
 add_compile_options(-fPIC -O3 -Wall -Wextra -g)
