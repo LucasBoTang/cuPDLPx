@@ -27,7 +27,7 @@ Our work is presented in two papers:
 
 ### Requirements
 * **GPU:** NVIDIA GPU with CUDA 12.4+.
-* **Build Tools:** CMake (≥ 3.22), GCC, NVCC.
+* **Build Tools:** CMake (≥ 3.20), GCC, NVCC.
 
 
 ### Build from Source
