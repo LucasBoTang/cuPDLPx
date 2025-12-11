@@ -85,6 +85,8 @@ extern "C"
 		bool bound_objective_rescaling;
 		bool verbose;
 		int termination_evaluation_frequency;
+		int sv_max_iter;
+		double sv_tol;
 		termination_criteria_t termination_criteria;
 		restart_parameters_t restart_params;
 		double reflection_coefficient;
