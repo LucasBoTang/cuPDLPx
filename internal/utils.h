@@ -140,6 +140,8 @@ extern "C"
 
     void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state);
 
+    void set_default_parameters(pdhg_parameters_t *params);
+
 #ifdef __cplusplus
 }
 
