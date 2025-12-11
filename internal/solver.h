@@ -27,8 +27,6 @@ extern "C"
         const pdhg_parameters_t *params,
         const lp_problem_t *original_problem);
 
-    void set_default_parameters(pdhg_parameters_t *params);
-
 #ifdef __cplusplus
 }
 #endif

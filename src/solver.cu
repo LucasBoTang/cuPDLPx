@@ -760,7 +760,7 @@ initialize_step_size_and_primal_weight(pdhg_solver_state_t *state,
 {
     double max_sv = estimate_maximum_singular_value(
         state->sparse_handle, state->blas_handle, state->constraint_matrix,
-        state->constraint_matrix_t, 5000, 1e-4);
+        state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
     state->step_size = 0.998 / max_sv;
 
     if (params->bound_objective_rescaling)
@@ -952,32 +952,6 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
     return results;
 }
 
-void set_default_parameters(pdhg_parameters_t *params)
-{
-    params->l_inf_ruiz_iterations = 10;
-    params->has_pock_chambolle_alpha = true;
-    params->pock_chambolle_alpha = 1.0;
-    params->bound_objective_rescaling = true;
-    params->verbose = false;
-    params->termination_evaluation_frequency = 200;
-    params->feasibility_polishing = false;
-    params->reflection_coefficient = 1.0;
-
-    params->termination_criteria.eps_optimal_relative = 1e-4;
-    params->termination_criteria.eps_feasible_relative = 1e-4;
-    params->termination_criteria.eps_infeasible = 1e-10;
-    params->termination_criteria.time_sec_limit = 3600.0;
-    params->termination_criteria.iteration_limit = INT32_MAX;
-    params->termination_criteria.eps_feas_polish_relative = 1e-6;
-
-    params->restart_params.artificial_restart_threshold = 0.36;
-    params->restart_params.sufficient_reduction_for_restart = 0.2;
-    params->restart_params.necessary_reduction_for_restart = 0.5;
-    params->restart_params.k_p = 0.99;
-    params->restart_params.k_i = 0.01;
-    params->restart_params.k_d = 0.0;
-    params->restart_params.i_smooth = 0.3;
-}
 
 //Feasibility Polishing
 void feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *state)
