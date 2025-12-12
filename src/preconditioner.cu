@@ -21,6 +21,7 @@ limitations under the License.
 #include <math.h>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
+#include <cub/cub.cuh>
 
 #define SCALING_EPSILON 1e-12
 
@@ -58,11 +59,11 @@ __global__ void clamp_sqrt_and_accum_kernel(double *__restrict__ scaling_factors
                                             double *__restrict__ inverse_scaling_factors,
                                             double *__restrict__ cumulative_rescaling,
                                             int num_variables);
-__global__ void reduce_bound_norm_sq_kernel(
+__global__ void compute_bound_contrib_kernel(
     const double *__restrict__ constraint_lower_bound,
     const double *__restrict__ constraint_upper_bound,
     int num_constraints,
-    double *__restrict__ block_sums);
+    double *__restrict__ contrib);
 __global__ void scale_bounds_kernel(
     double *__restrict__ constraint_lower_bound,
     double *__restrict__ constraint_upper_bound,
@@ -210,14 +211,23 @@ static void bound_objective_rescaling(
     const int num_constraints = state->num_constraints;
     const int num_variables = state->num_variables;
 
-    double *bnd_norm_sq_d = NULL;
-    CUDA_CHECK(cudaMalloc(&bnd_norm_sq_d, sizeof(double)));
-    CUDA_CHECK(cudaMemset(bnd_norm_sq_d, 0, sizeof(double)));
-    reduce_bound_norm_sq_kernel<<<1, THREADS_PER_BLOCK, THREADS_PER_BLOCK * sizeof(double)>>>(
+    double *contrib_d = nullptr;
+    CUDA_CHECK(cudaMalloc(&contrib_d, num_constraints * sizeof(double)));
+    compute_bound_contrib_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_lower_bound,
         state->constraint_upper_bound,
         num_constraints,
-        bnd_norm_sq_d);
+        contrib_d);
+
+    double *bnd_norm_sq_d = nullptr;
+    CUDA_CHECK(cudaMalloc(&bnd_norm_sq_d, sizeof(double)));;
+    void *temp_storage = nullptr;
+    size_t temp_bytes = 0;
+    CUDA_CHECK(cub::DeviceReduce::Sum(temp_storage, temp_bytes, contrib_d, bnd_norm_sq_d, num_constraints));
+    CUDA_CHECK(cudaMalloc(&temp_storage, temp_bytes));
+    CUDA_CHECK(cub::DeviceReduce::Sum(temp_storage, temp_bytes, contrib_d, bnd_norm_sq_d, num_constraints));
+    CUDA_CHECK(cudaFree(contrib_d));
+    CUDA_CHECK(cudaFree(temp_storage));
 
     double bnd_norm_sq_h = 0.0;
     CUDA_CHECK(cudaMemcpy(&bnd_norm_sq_h, bnd_norm_sq_d, sizeof(double), cudaMemcpyDeviceToHost));
@@ -432,49 +442,29 @@ __global__ void clamp_sqrt_and_accum_kernel(double *__restrict__ scaling_factors
     }
 }
 
-__global__ void reduce_bound_norm_sq_kernel(
+__global__ void compute_bound_contrib_kernel(
     const double *__restrict__ constraint_lower_bound,
     const double *__restrict__ constraint_upper_bound,
     int num_constraints,
-    double *__restrict__ block_sums)
+    double *__restrict__ contrib)
 {
-    extern __shared__ double sdata[];
-    int tid = threadIdx.x;
-    int global_tid = blockIdx.x * blockDim.x + tid;
-    int stride = blockDim.x * gridDim.x;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_constraints) return;
+
+    double Li = constraint_lower_bound[i];
+    double Ui = constraint_upper_bound[i];
+    bool fL = isfinite(Li);
+    bool fU = isfinite(Ui);
 
     double acc = 0.0;
-    for (int i = global_tid; i < num_constraints; i += stride)
-    {
-        double Li = constraint_lower_bound[i], Ui = constraint_upper_bound[i];
-        bool fL = isfinite(Li), fU = isfinite(Ui);
 
-        if (fL && (!fU || fabs(Li - Ui) > SCALING_EPSILON))
-        {
-            acc += Li * Li;
-        }
-        if (fU)
-        {
-            acc += Ui * Ui;
-        }
-    }
+    // follow the existing semantics
+    if (fL && (!fU || fabs(Li - Ui) > SCALING_EPSILON))
+        acc += Li * Li;
+    if (fU)
+        acc += Ui * Ui;
 
-    sdata[tid] = acc;
-    __syncthreads();
-
-    for (int s = blockDim.x / 2; s > 0; s >>= 1)
-    {
-        if (tid < s)
-        {
-            sdata[tid] += sdata[tid + s];
-        }
-        __syncthreads();
-    }
-
-    if (tid == 0)
-    {
-        block_sums[blockIdx.x] = sdata[0];
-    }
+    contrib[i] = acc;
 }
 
 __global__ void scale_bounds_kernel(
