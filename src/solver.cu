@@ -181,7 +181,7 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
         }
         halpern_update(state, params->reflection_coefficient);
 
-        if (state->inner_count > 0 && (state->inner_count % 10000) == 0)
+        if (state->inner_count > 0 && (state->inner_count % params->adaptive_scaling_frequency) == 0)
         {
             compute_delta_solution_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
                 state->initial_primal_solution, state->pdhg_primal_solution,

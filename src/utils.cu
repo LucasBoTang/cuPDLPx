@@ -325,6 +325,7 @@ void set_default_parameters(pdhg_parameters_t *params)
     params->bound_objective_rescaling = true;
     params->verbose = false;
     params->termination_evaluation_frequency = 200;
+    params->adaptive_scaling_frequency = 10000;
     params->feasibility_polishing = false;
     params->reflection_coefficient = 1.0;
 
