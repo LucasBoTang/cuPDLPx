@@ -90,6 +90,7 @@ extern "C"
 		termination_criteria_t termination_criteria;
 		restart_parameters_t restart_params;
 		double reflection_coefficient;
+		int adaptive_scaling_frequency;
 		bool feasibility_polishing;
 	} pdhg_parameters_t;
 

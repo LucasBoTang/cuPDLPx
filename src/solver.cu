@@ -442,6 +442,13 @@ static pdhg_solver_state_t *initialize_solver_state(
     CUDA_CHECK(cudaMemcpy(state->ones_dual_d, ones_dual_h, state->num_constraints * sizeof(double), cudaMemcpyHostToDevice));
     free(ones_dual_h);
 
+    CUDA_CHECK(cudaMalloc(&state->cur_diag_variable_rescaling, var_bytes));
+    CUDA_CHECK(cudaMalloc(&state->cur_diag_constraint_rescaling, con_bytes));
+    CUDA_CHECK(cudaMemcpy(state->cur_diag_variable_rescaling,
+                          state->ones_primal_d, var_bytes, cudaMemcpyDeviceToDevice));
+    CUDA_CHECK(cudaMemcpy(state->cur_diag_constraint_rescaling,
+                          state->ones_dual_d, con_bytes, cudaMemcpyDeviceToDevice));
+
     return state;
 }
 
@@ -979,6 +986,10 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->constraint_rescaling));
     if (state->variable_rescaling)
         CUDA_CHECK(cudaFree(state->variable_rescaling));
+    if (state->cur_diag_constraint_rescaling)
+        CUDA_CHECK(cudaFree(state->cur_diag_constraint_rescaling));
+    if (state->cur_diag_variable_rescaling)
+        CUDA_CHECK(cudaFree(state->cur_diag_variable_rescaling));
     if (state->primal_slack)
         CUDA_CHECK(cudaFree(state->primal_slack));
     if (state->dual_slack)

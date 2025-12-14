@@ -95,7 +95,6 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ constraint_rescaling,
-    double *__restrict__ inverse_constraint_rescaling,
     int num_constraints);
 __global__ void compute_diagonal_variable_rescaling_kernel(
     const int *__restrict__ row_ptr_t,
@@ -104,11 +103,13 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ variable_rescaling,
-    double *__restrict__ inverse_variable_rescaling,
     int num_variables);
-__global__ void accum_rescaling_kernel(double *cumulative,
-                                       const double *step_scale,
-                                       int n);
+__global__ void compute_ratio_and_inv_ratio_kernel(
+    const double *__restrict__ new_scale,
+    const double *__restrict__ old_scale,
+    double *__restrict__ ratio,
+    double *__restrict__ inv_ratio,
+    int n);
 __global__ void scale_primal_solution_state_kernel(
     double *__restrict__ current_primal_solution,
     double *__restrict__ pdhg_primal_solution,
@@ -376,13 +377,18 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
     int num_variables = state->num_variables;
     int num_constraints = state->num_constraints;
 
-    double *constraint_rescaling = nullptr, *variable_rescaling = nullptr;
-    double *inverse_constraint_rescaling = nullptr, *inverse_variable_rescaling = nullptr;
+    double *new_constraint_rescaling = nullptr, *new_variable_rescaling = nullptr;
+    CUDA_CHECK(cudaMalloc(&new_constraint_rescaling, num_constraints * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&new_variable_rescaling, num_variables * sizeof(double)));
 
-    CUDA_CHECK(cudaMalloc(&constraint_rescaling, num_constraints * sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&variable_rescaling, num_variables * sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&inverse_constraint_rescaling, num_constraints * sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&inverse_variable_rescaling, num_variables * sizeof(double)));
+    double *constraint_ratio_rescaling = nullptr;
+    double *variable_ratio_rescaling = nullptr;
+    double *inverse_constraint_ratio_rescaling = nullptr;
+    double *inverse_variable_ratio_rescaling = nullptr;
+    CUDA_CHECK(cudaMalloc(&constraint_ratio_rescaling, num_constraints * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&variable_ratio_rescaling, num_variables * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&inverse_constraint_ratio_rescaling, num_constraints * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&inverse_variable_ratio_rescaling, num_variables * sizeof(double)));
 
     compute_diagonal_constraint_rescaling_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_matrix->row_ptr,
@@ -390,8 +396,7 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
         state->constraint_matrix->val,
         state->delta_primal_solution,
         state->delta_dual_solution,
-        constraint_rescaling,
-        inverse_constraint_rescaling,
+        new_constraint_rescaling,
         num_constraints);
 
     compute_diagonal_variable_rescaling_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
@@ -400,24 +405,48 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
         state->constraint_matrix_t->val,
         state->delta_primal_solution,
         state->delta_dual_solution,
-        variable_rescaling,
-        inverse_variable_rescaling,
+        new_variable_rescaling,
         num_variables);
 
-    scale_problem(state, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
+    compute_ratio_and_inv_ratio_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        new_constraint_rescaling,
+        state->cur_diag_constraint_rescaling,
+        constraint_ratio_rescaling,
+        inverse_constraint_ratio_rescaling,
+        num_constraints);
 
-    accum_rescaling_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
-        state->constraint_rescaling, constraint_rescaling, num_constraints);
+    compute_ratio_and_inv_ratio_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        new_variable_rescaling,
+        state->cur_diag_variable_rescaling,
+        variable_ratio_rescaling,
+        inverse_variable_ratio_rescaling,
+        num_variables);
 
-    accum_rescaling_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
-        state->variable_rescaling, variable_rescaling, num_variables);
+    scale_problem(
+        state, 
+        constraint_ratio_rescaling, 
+        variable_ratio_rescaling, 
+        inverse_constraint_ratio_rescaling, 
+        inverse_variable_ratio_rescaling);
+
+    CUDA_CHECK(cudaMemcpy(
+        state->cur_diag_constraint_rescaling,
+        new_constraint_rescaling,
+        num_constraints * sizeof(double),
+        cudaMemcpyDeviceToDevice));
+
+    CUDA_CHECK(cudaMemcpy(
+        state->cur_diag_variable_rescaling,
+        new_variable_rescaling,
+        num_variables * sizeof(double),
+        cudaMemcpyDeviceToDevice));
 
     scale_primal_solution_state_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         state->current_primal_solution,
         state->pdhg_primal_solution,
         state->reflected_primal_solution,
         state->delta_primal_solution,
-        variable_rescaling,
+        variable_ratio_rescaling,
         num_variables);
 
     scale_dual_solution_state_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
@@ -425,13 +454,17 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
         state->pdhg_dual_solution,
         state->reflected_dual_solution,
         state->delta_dual_solution,
-        constraint_rescaling,
+        constraint_ratio_rescaling,
         num_constraints);
 
-    CUDA_CHECK(cudaFree(constraint_rescaling));
-    CUDA_CHECK(cudaFree(variable_rescaling));
-    CUDA_CHECK(cudaFree(inverse_constraint_rescaling));
-    CUDA_CHECK(cudaFree(inverse_variable_rescaling));
+    CUDA_CHECK(cudaFree(new_constraint_rescaling));
+    CUDA_CHECK(cudaFree(new_variable_rescaling));
+    CUDA_CHECK(cudaFree(constraint_ratio_rescaling));
+    CUDA_CHECK(cudaFree(variable_ratio_rescaling));
+    CUDA_CHECK(cudaFree(inverse_constraint_ratio_rescaling));
+    CUDA_CHECK(cudaFree(inverse_variable_ratio_rescaling));
+
+    CUDA_CHECK(cudaGetLastError());
 }
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
@@ -642,7 +675,6 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ constraint_rescaling,
-    double *__restrict__ inverse_constraint_rescaling,
     int num_constraints)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -663,9 +695,8 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
         acc += a * (numer / denom);
     }
 
-    double acc_sqrt = sqrt(fmax(acc, SCALING_EPSILON));
-    constraint_rescaling[i] = 1 / acc_sqrt;
-    inverse_constraint_rescaling[i] = acc_sqrt;
+    double acc_sqrt = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
+    constraint_rescaling[i] = 1.0 / acc_sqrt;
 }
 
 __global__ void compute_diagonal_variable_rescaling_kernel(
@@ -675,7 +706,6 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ variable_rescaling,
-    double *__restrict__ inverse_variable_rescaling,
     int num_variables)
 {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
@@ -696,18 +726,23 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
         acc += a * (numer / denom);
     }
 
-    double acc_sqrt = sqrt(fmax(acc, SCALING_EPSILON));
-    variable_rescaling[j] = 1 / acc_sqrt;
-    inverse_variable_rescaling[j] = acc_sqrt;
+    double acc_sqrt = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
+    variable_rescaling[j] = 1.0 / acc_sqrt;
 }
 
-__global__ void accum_rescaling_kernel(double *cumulative,
-                                       const double *step_scale,
-                                       int n)
+__global__ void compute_ratio_and_inv_ratio_kernel(
+    const double *__restrict__ new_scale,
+    const double *__restrict__ old_scale,
+    double *__restrict__ ratio,
+    double *__restrict__ inv_ratio,
+    int n)
 {
-    int t = blockIdx.x * blockDim.x + threadIdx.x;
-    if (t < n)
-        cumulative[t] *= step_scale[t];
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+    double ns = new_scale[i];
+    double os = old_scale[i];
+    ratio[i]     = ns / os;
+    inv_ratio[i] = os / ns;
 }
 
 __global__ void scale_primal_solution_state_kernel(

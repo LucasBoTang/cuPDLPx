@@ -83,6 +83,8 @@ typedef struct
 	double *dual_slack;
 	double rescaling_time_sec;
 	double cumulative_time_sec;
+	double *cur_diag_constraint_rescaling;
+	double *cur_diag_variable_rescaling;
 
 	double *primal_residual;
 	double absolute_primal_residual;
