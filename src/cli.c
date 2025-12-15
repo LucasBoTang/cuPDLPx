@@ -26,28 +26,6 @@ limitations under the License.
 #include <stdlib.h>
 #include <string.h>
 
-const char *termination_reason_tToString(termination_reason_t reason)
-{
-    switch (reason)
-    {
-    case TERMINATION_REASON_OPTIMAL:
-        return "OPTIMAL";
-    case TERMINATION_REASON_PRIMAL_INFEASIBLE:
-        return "PRIMAL_INFEASIBLE";
-    case TERMINATION_REASON_DUAL_INFEASIBLE:
-        return "DUAL_INFEASIBLE";
-    case TERMINATION_REASON_TIME_LIMIT:
-        return "TIME_LIMIT";
-    case TERMINATION_REASON_ITERATION_LIMIT:
-        return "ITERATION_LIMIT";
-    case TERMINATION_REASON_UNSPECIFIED:
-    case TERMINATION_REASON_FEAS_POLISH_SUCCESS:
-        return "FEAS_POLISH_SUCCESS";
-    default:
-        return "UNSPECIFIED";
-    }
-}
-
 char *get_output_path(const char *output_dir, const char *instance_name,
                       const char *suffix)
 {
@@ -122,7 +100,7 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
         return;
     }
     fprintf(outfile, "Termination Reason: %s\n",
-            termination_reason_tToString(result->termination_reason));
+            termination_reason_to_string(result->termination_reason));
     fprintf(outfile, "Runtime (sec): %e\n", result->cumulative_time_sec);
     fprintf(outfile, "Iterations Count: %d\n", result->total_count);
     fprintf(outfile, "Primal Objective Value: %e\n",

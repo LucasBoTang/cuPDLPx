@@ -174,9 +174,12 @@ static const char *status_to_str(termination_reason_t r)
         return "TIME_LIMIT";
     case TERMINATION_REASON_ITERATION_LIMIT:
         return "ITERATION_LIMIT";
+    case TERMINATION_REASON_FEAS_POLISH_SUCCESS:
+        return "FEAS_POLISH_SUCCESS";
     case TERMINATION_REASON_UNSPECIFIED:
-    default:
         return "UNSPECIFIED";
+    default:
+        return "UNKNOWN";
     }
 }
 
