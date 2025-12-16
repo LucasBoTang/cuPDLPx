@@ -330,6 +330,15 @@ static pdhg_solver_state_t *initialize_solver_state(
     }
 
     rescale_info_t *rescale_info = rescale_problem(params, state);
+  
+    CUDA_CHECK(cudaMemcpy(state->current_primal_solution, state->initial_primal_solution,
+                          var_bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(state->pdhg_primal_solution, state->initial_primal_solution,
+                          var_bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(state->current_dual_solution, state->initial_dual_solution,
+                          con_bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(state->pdhg_dual_solution, state->initial_dual_solution, 
+                          con_bytes, cudaMemcpyHostToDevice));
 
     state->constraint_rescaling = rescale_info->con_rescale;
     state->variable_rescaling = rescale_info->var_rescale;
@@ -792,10 +801,17 @@ static void perform_restart(pdhg_solver_state_t *state,
 static void initialize_step_size_and_primal_weight(pdhg_solver_state_t *state,
                                                    const pdhg_parameters_t *params)
 {
-    double max_sv = estimate_maximum_singular_value(
-        state->sparse_handle, state->blas_handle, state->constraint_matrix,
-        state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
-    state->step_size = 0.998 / max_sv;
+    if (state->constraint_matrix->num_nonzeros == 0)
+    {
+        state->step_size = 1.0;
+    }
+    else
+    {
+        double max_sv = estimate_maximum_singular_value(
+            state->sparse_handle, state->blas_handle, state->constraint_matrix,
+            state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
+        state->step_size = 0.998 / max_sv;
+    }
 
     if (params->bound_objective_rescaling)
     {
