@@ -102,7 +102,7 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
     fprintf(outfile, "Termination Reason: %s\n",
             termination_reason_to_string(result->termination_reason));
     fprintf(outfile, "Precondition Time (sec): %e\n", result->rescaling_time_sec);
-            termination_reason_to_string(result->termination_reason));
+            termination_reason_to_string(result->termination_reason);
     fprintf(outfile, "Runtime (sec): %e\n", result->cumulative_time_sec);
     fprintf(outfile, "Iterations Count: %d\n", result->total_count);
     fprintf(outfile, "Primal Objective Value: %e\n",
