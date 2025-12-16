@@ -460,7 +460,7 @@ void pdhg_final_log(const pdhg_solver_state_t *state, bool verbose,
     printf("Solution Summary\n");
     printf("  Status                 : %s\n", termination_reason_to_string(reason));
     printf("  Precondition time      : %.5g sec\n", state->rescaling_time_sec);
-    printf("  Diagonal scaling count : %d\n", state->diag_scaling_count);
+    printf("  Diagonal scaling count : %d\n", state->diag_scaling_total_count);
     printf("  Iterations             : %d\n", state->total_count - 1);
     printf("  Solve time             : %.3g sec\n", state->cumulative_time_sec);
     printf("  Primal obj             : %.10g\n", state->primal_objective_value);

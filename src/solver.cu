@@ -104,6 +104,7 @@ static void compute_next_pdhg_dual_solution(pdhg_solver_state_t *state);
 static void halpern_update(pdhg_solver_state_t *state, double reflection_coefficient);
 static void rescale_solution(pdhg_solver_state_t *state);
 static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state);
+static void perform_diagonal_scaling_and_update(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
 static void perform_restart(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
 static void initialize_step_size_and_primal_weight(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
 static void update_step_size_and_primal_weight(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
@@ -183,14 +184,7 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
 
         if (state->inner_count > 0 && (state->inner_count % params->adaptive_scaling_frequency) == 0)
         {
-            compute_delta_solution_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
-                state->initial_primal_solution, state->pdhg_primal_solution,
-                state->delta_primal_solution,
-                state->initial_dual_solution, state->pdhg_dual_solution,
-                state->delta_dual_solution,
-                state->num_variables, state->num_constraints);
-            apply_diagonal_scaling(state);
-            update_step_size_and_primal_weight(state, params);
+            perform_diagonal_scaling_and_update(state, params);
         }
 
         state->inner_count++;
@@ -444,11 +438,15 @@ static pdhg_solver_state_t *initialize_solver_state(
 
     CUDA_CHECK(cudaMalloc(&state->cur_diag_variable_rescaling, var_bytes));
     CUDA_CHECK(cudaMalloc(&state->cur_diag_constraint_rescaling, con_bytes));
-    CUDA_CHECK(cudaMemcpy(state->cur_diag_variable_rescaling,
+    CUDA_CHECK(cudaMalloc(&state->cum_diag_variable_rescaling, var_bytes));
+    CUDA_CHECK(cudaMalloc(&state->cum_diag_constraint_rescaling, con_bytes));
+    CUDA_CHECK(cudaMemcpy(state->cum_diag_variable_rescaling,
                           state->ones_primal_d, var_bytes, cudaMemcpyDeviceToDevice));
-    CUDA_CHECK(cudaMemcpy(state->cur_diag_constraint_rescaling,
+    CUDA_CHECK(cudaMemcpy(state->cum_diag_constraint_rescaling,
                           state->ones_dual_d, con_bytes, cudaMemcpyDeviceToDevice));
-    state->diag_scaling_count = 0;
+
+    state->diag_scaling_inner_count = 0;
+    state->diag_scaling_total_count = 0;
 
     return state;
 }
@@ -737,15 +735,33 @@ static void rescale_solution(pdhg_solver_state_t *state)
         state->num_variables, state->num_constraints);
 }
 
+static void perform_diagonal_scaling_and_update(pdhg_solver_state_t *state,
+                                                    const pdhg_parameters_t *params)
+{
+    compute_delta_solution_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
+                state->initial_primal_solution, state->pdhg_primal_solution,
+                state->delta_primal_solution,
+                state->initial_dual_solution, state->pdhg_dual_solution,
+                state->delta_dual_solution,
+                state->num_variables, state->num_constraints);
+            apply_diagonal_scaling(state);
+            compute_residual(state);
+            update_step_size_and_primal_weight(state, params);
+} 
+
 static void perform_restart(pdhg_solver_state_t *state,
                             const pdhg_parameters_t *params)
 {
+    undo_diagonal_scaling(state);
+
     compute_delta_solution_kernel<<<state->num_blocks_primal_dual,
                                     THREADS_PER_BLOCK>>>(
         state->initial_primal_solution, state->pdhg_primal_solution,
         state->delta_primal_solution, state->initial_dual_solution,
         state->pdhg_dual_solution, state->delta_dual_solution,
         state->num_variables, state->num_constraints);
+
+    compute_residual(state);
 
     double primal_dist, dual_dist;
     CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
@@ -786,6 +802,8 @@ static void perform_restart(pdhg_solver_state_t *state,
         state->best_primal_weight = state->primal_weight;
     }
 
+    state->step_size = state->cached_step_size;
+
     CUDA_CHECK(cudaMemcpy(
         state->initial_primal_solution, state->pdhg_primal_solution,
         state->num_variables * sizeof(double), cudaMemcpyDeviceToDevice));
@@ -810,6 +828,7 @@ static void initialize_step_size_and_primal_weight(pdhg_solver_state_t *state,
         state->sparse_handle, state->blas_handle, state->constraint_matrix,
         state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
     state->step_size = 0.998 / max_sv;
+    state->cached_step_size = state->step_size;
 
     if (params->bound_objective_rescaling)
     {
@@ -831,24 +850,14 @@ static void update_step_size_and_primal_weight(pdhg_solver_state_t *state,
         state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
     state->step_size = 0.998 / max_sv;
 
-    double dx_norm = 0.0;
-    double dy_norm = 0.0;
-
-    CUBLAS_CHECK(cublasDnrm2_v2_64(
-        state->blas_handle,
-        state->num_variables,
-        state->delta_primal_solution,
-        1,
-        &dx_norm));
-
-    CUBLAS_CHECK(cublasDnrm2_v2_64(
-        state->blas_handle,
-        state->num_constraints,
-        state->delta_dual_solution,
-        1,
-        &dy_norm));
-
-    state->primal_weight = (dy_norm + 1e-12) / (dx_norm + 1e-12);
+    double primal_dist, dual_dist;
+    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
+                                   state->delta_primal_solution, 1,
+                                   &primal_dist));
+    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_constraints,
+                                   state->delta_dual_solution, 1, &dual_dist));
+    state->primal_weight = (dual_dist + 1e-12) / (primal_dist + 1e-12);
+    state->best_primal_weight = state->primal_weight;
 
     state->primal_weight_error_sum = 0.0;
     state->primal_weight_last_error = 0.0;
@@ -991,6 +1000,10 @@ void pdhg_solver_state_free(pdhg_solver_state_t *state)
         CUDA_CHECK(cudaFree(state->cur_diag_constraint_rescaling));
     if (state->cur_diag_variable_rescaling)
         CUDA_CHECK(cudaFree(state->cur_diag_variable_rescaling));
+    if (state->cum_diag_constraint_rescaling)
+        CUDA_CHECK(cudaFree(state->cum_diag_constraint_rescaling));
+    if (state->cum_diag_variable_rescaling)
+        CUDA_CHECK(cudaFree(state->cum_diag_variable_rescaling));
     if (state->primal_slack)
         CUDA_CHECK(cudaFree(state->primal_slack));
     if (state->dual_slack)
@@ -1051,7 +1064,7 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
     results->num_variables = state->num_variables;
     results->num_constraints = state->num_constraints;
     results->total_count = state->total_count;
-    results->diag_scaling_count = state->diag_scaling_count;
+    results->diag_scaling_count = state->diag_scaling_total_count;
     results->rescaling_time_sec = state->rescaling_time_sec;
     results->cumulative_time_sec = state->cumulative_time_sec;
     results->relative_primal_residual = state->relative_primal_residual;

@@ -29,6 +29,8 @@ extern "C"
 
     void apply_diagonal_scaling(pdhg_solver_state_t *state);
 
+    void undo_diagonal_scaling(pdhg_solver_state_t *state);
+
 #ifdef __cplusplus
 }
 #endif

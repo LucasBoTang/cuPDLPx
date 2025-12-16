@@ -67,6 +67,7 @@ typedef struct
 	double *reflected_dual_solution;
 	double *primal_product;
 	double step_size;
+	double cached_step_size;
 	double primal_weight;
 	int total_count;
 	bool is_this_major_iteration;
@@ -85,7 +86,10 @@ typedef struct
 	double cumulative_time_sec;
 	double *cur_diag_constraint_rescaling;
 	double *cur_diag_variable_rescaling;
-	int diag_scaling_count;
+	double *cum_diag_constraint_rescaling;
+	double *cum_diag_variable_rescaling;
+	int diag_scaling_inner_count;
+	int diag_scaling_total_count;
 
 	double *primal_residual;
 	double absolute_primal_residual;
