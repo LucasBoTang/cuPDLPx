@@ -310,6 +310,10 @@ initialize_solver_state(const lp_problem_t *original_problem,
                           rescale_info->con_bound_rescale;
         CUDA_CHECK(cudaMemcpy(state->initial_primal_solution, rescaled, var_bytes,
                               cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(state->current_primal_solution, rescaled, var_bytes,
+                              cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(state->pdhg_primal_solution, rescaled, var_bytes,
+                              cudaMemcpyHostToDevice));
         free(rescaled);
     }
     if (original_problem->dual_start)
@@ -320,6 +324,10 @@ initialize_solver_state(const lp_problem_t *original_problem,
                           rescale_info->con_rescale[i] *
                           rescale_info->obj_vec_rescale;
         CUDA_CHECK(cudaMemcpy(state->initial_dual_solution, rescaled, con_bytes,
+                              cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(state->current_dual_solution, rescaled, con_bytes,
+                              cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(state->pdhg_dual_solution, rescaled, con_bytes,
                               cudaMemcpyHostToDevice));
         free(rescaled);
     }
