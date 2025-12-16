@@ -103,6 +103,7 @@ extern "C"
 		double *dual_solution;
 
 		int total_count;
+		int diag_scaling_count;
 		double rescaling_time_sec;
 		double cumulative_time_sec;
 

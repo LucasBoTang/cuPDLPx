@@ -85,6 +85,7 @@ typedef struct
 	double cumulative_time_sec;
 	double *cur_diag_constraint_rescaling;
 	double *cur_diag_variable_rescaling;
+	int diag_scaling_count;
 
 	double *primal_residual;
 	double absolute_primal_residual;

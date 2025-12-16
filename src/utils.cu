@@ -458,14 +458,15 @@ void pdhg_final_log(const pdhg_solver_state_t *state, bool verbose,
                "--------------------\n");
     }
     printf("Solution Summary\n");
-    printf("  Status            : %s\n", termination_reason_to_string(reason));
-    printf("  Precondition time : %.5g sec\n", state->rescaling_time_sec);
-    printf("  Iterations        : %d\n", state->total_count - 1);
-    printf("  Solve time        : %.3g sec\n", state->cumulative_time_sec);
-    printf("  Primal obj        : %.10g\n", state->primal_objective_value);
-    printf("  Dual obj          : %.10g\n", state->dual_objective_value);
-    printf("  Primal infeas     : %.3e\n", state->relative_primal_residual);
-    printf("  Dual infeas       : %.3e\n", state->relative_dual_residual);
+    printf("  Status                 : %s\n", termination_reason_to_string(reason));
+    printf("  Precondition time      : %.5g sec\n", state->rescaling_time_sec);
+    printf("  Diagonal scaling count : %d\n", state->diag_scaling_count);
+    printf("  Iterations             : %d\n", state->total_count - 1);
+    printf("  Solve time             : %.3g sec\n", state->cumulative_time_sec);
+    printf("  Primal obj             : %.10g\n", state->primal_objective_value);
+    printf("  Dual obj               : %.10g\n", state->dual_objective_value);
+    printf("  Primal infeas          : %.3e\n", state->relative_primal_residual);
+    printf("  Dual infeas            : %.3e\n", state->relative_dual_residual);
 }
 
 void display_iteration_stats(const pdhg_solver_state_t *state, bool verbose)

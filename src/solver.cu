@@ -448,6 +448,7 @@ static pdhg_solver_state_t *initialize_solver_state(
                           state->ones_primal_d, var_bytes, cudaMemcpyDeviceToDevice));
     CUDA_CHECK(cudaMemcpy(state->cur_diag_constraint_rescaling,
                           state->ones_dual_d, con_bytes, cudaMemcpyDeviceToDevice));
+    state->diag_scaling_count = 0;
 
     return state;
 }
@@ -1050,6 +1051,7 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
     results->num_variables = state->num_variables;
     results->num_constraints = state->num_constraints;
     results->total_count = state->total_count;
+    results->diag_scaling_count = state->diag_scaling_count;
     results->rescaling_time_sec = state->rescaling_time_sec;
     results->cumulative_time_sec = state->cumulative_time_sec;
     results->relative_primal_residual = state->relative_primal_residual;

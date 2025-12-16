@@ -372,8 +372,6 @@ rescale_info_t *rescale_problem(
 
 void apply_diagonal_scaling(pdhg_solver_state_t *state)
 {
-    printf("[Adaptive Scaling] Diagonal Scaling\n");
-
     int num_variables = state->num_variables;
     int num_constraints = state->num_constraints;
 
@@ -465,6 +463,8 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
     CUDA_CHECK(cudaFree(inverse_variable_ratio_rescaling));
 
     CUDA_CHECK(cudaGetLastError());
+
+    state->diag_scaling_count += 1;
 }
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
