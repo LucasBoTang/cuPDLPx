@@ -745,7 +745,6 @@ static void perform_diagonal_scaling_and_update(pdhg_solver_state_t *state,
                 state->delta_dual_solution,
                 state->num_variables, state->num_constraints);
             apply_diagonal_scaling(state);
-            compute_residual(state);
             update_step_size_and_primal_weight(state, params);
 } 
 
