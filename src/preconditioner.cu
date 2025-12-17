@@ -21,7 +21,7 @@ limitations under the License.
 #include <math.h>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
-#include <cub/cub.cuh>
+#include <cub/device/device_reduce.cuh>
 
 #define SCALING_EPSILON 1e-12
 
