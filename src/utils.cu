@@ -435,16 +435,6 @@ void print_initial_info(const pdhg_parameters_t *params,
     PRINT_DIFF_DBL("eps_feas_polish_relative",
                    params->termination_criteria.eps_feas_polish_relative,
                    default_params.termination_criteria.eps_feas_polish_relative);
-
-    printf("---------------------------------------------------------------------"
-           "------------------\n");
-    printf("%s | %s | %s | %s \n", "   runtime    ", "    objective     ",
-           "  absolute residuals   ", "  relative residuals   ");
-    printf("%s %s | %s %s | %s %s %s | %s %s %s \n", "  iter", "  time ",
-           " pr obj ", "  du obj ", " pr res", " du res", "  gap  ", " pr res",
-           " du res", "  gap  ");
-    printf("---------------------------------------------------------------------"
-           "------------------\n");
 }
 
 #undef PRINT_DIFF_INT
