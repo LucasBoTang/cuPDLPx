@@ -16,6 +16,7 @@ limitations under the License.
 
 #include "cupdlpx.h"
 #include "mps_parser.h"
+#include "presolve.h"
 #include "solver.h"
 #include "utils.h"
 #include <getopt.h>
@@ -61,7 +62,7 @@ void save_solution(const double *data, int size, const char *output_dir,
                    const char *instance_name, const char *suffix)
 {
     char *file_path = get_output_path(output_dir, instance_name, suffix);
-    if (file_path == NULL)
+    if (file_path == NULL || data == NULL)
     {
         return;
     }
@@ -113,7 +114,19 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
     fprintf(outfile, "Absolute Objective Gap: %e\n", result->objective_gap);
     fprintf(outfile, "Relative Objective Gap: %e\n",
             result->relative_objective_gap);
-    if(result->feasibility_polishing_time > 0.0){
+    fprintf(outfile, "Rows: %d\n", result->num_constraints);
+    fprintf(outfile, "Columns: %d\n", result->num_variables);
+    fprintf(outfile, "Nonzeros: %d\n", result->num_nonzeros);
+    if (result->presolve_time > 0.0)
+    {
+        fprintf(outfile, "Presolve Status: %s\n", get_presolve_status_str(result->presolve_status));
+        fprintf(outfile, "Presolve Time (sec): %e\n", result->presolve_time);
+        fprintf(outfile, "Reduced Rows: %d\n", result->num_reduced_constraints);
+        fprintf(outfile, "Reduced Columns: %d\n", result->num_reduced_variables);
+        fprintf(outfile, "Reduced Nonzeros: %d\n", result->num_reduced_nonzeros);
+    }
+    if (result->feasibility_polishing_time > 0.0)
+    {
         fprintf(outfile, "Feasibility Polishing Time (sec): %e\n", result->feasibility_polishing_time);
         fprintf(outfile, "Feasibility Polishing Iteration Count: %d\n", result->feasibility_iteration);
     }
@@ -171,6 +184,8 @@ void print_usage(const char *prog_name)
                     "Enable feasibility use feasibility polishing (default: false).\n");
     fprintf(stderr, "      --eps_feas_polish <tolerance>   Relative feasibility "
                     "polish tolerance (default: 1e-6).\n");
+    fprintf(stderr, "      --no_presolve                   "
+                    "Disable presolve (default: enabled).\n");
 }
 
 int main(int argc, char *argv[])
@@ -195,10 +210,11 @@ int main(int argc, char *argv[])
         {"sv_max_iter", required_argument, 0, 1011},
         {"sv_tol", required_argument, 0, 1012},
         {"eval_freq", required_argument, 0, 1013},
+        {"no_presolve", no_argument, 0, 1014},
         {0, 0, 0, 0}};
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "hvf", long_options, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "hvfp", long_options, NULL)) != -1)
     {
         switch (opt)
         {
@@ -226,7 +242,7 @@ int main(int argc, char *argv[])
         case 1006: // --eps_feas_polish_relative
             params.termination_criteria.eps_feas_polish_relative = atof(optarg);
             break;
-        case 'f':  // --feasibility_polishing
+        case 'f': // --feasibility_polishing
             params.feasibility_polishing = true;
             break;
         case 1007: // --l_inf_ruiz_iter
@@ -249,6 +265,9 @@ int main(int argc, char *argv[])
             break;
         case 1013: // --eval_freq
             params.termination_evaluation_frequency = atoi(optarg);
+            break;
+        case 1014: // --no_presolve
+            params.presolve = false;
             break;
         case '?': // Unknown option
             return 1;

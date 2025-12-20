@@ -17,6 +17,7 @@ limitations under the License.
 #include "cupdlpx.h"
 #include "internal_types.h"
 #include "preconditioner.h"
+#include "presolve.h"
 #include "solver.h"
 #include "utils.h"
 #include <cublas_v2.h>
@@ -65,20 +66,20 @@ static void compute_next_pdhg_dual_solution(pdhg_solver_state_t *state);
 static void halpern_update(pdhg_solver_state_t *state,
                            double reflection_coefficient);
 static void rescale_solution(pdhg_solver_state_t *state);
-static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state);
+static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state, const lp_problem_t *original_problem);
 static void perform_restart(pdhg_solver_state_t *state,
                             const pdhg_parameters_t *params);
 static void
 initialize_step_size_and_primal_weight(pdhg_solver_state_t *state,
                                        const pdhg_parameters_t *params);
-static pdhg_solver_state_t *
-initialize_solver_state(const lp_problem_t *original_problem,
-                        const rescale_info_t *rescale_info);
+static pdhg_solver_state_t *initialize_solver_state(const pdhg_parameters_t *params,
+                                                    const lp_problem_t *original_problem,
+                                                    const rescale_info_t *rescale_info);
 static void compute_fixed_point_error(pdhg_solver_state_t *state);
 void pdhg_solver_state_free(pdhg_solver_state_t *state);
 void rescale_info_free(rescale_info_t *info);
 
-static void perform_primal_restart(pdhg_solver_state_t *state);    
+static void perform_primal_restart(pdhg_solver_state_t *state);
 static void perform_dual_restart(pdhg_solver_state_t *state);
 void primal_feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state);
 void dual_feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state);
@@ -92,20 +93,34 @@ static pdhg_solver_state_t *initialize_primal_feas_polish_state(
 static pdhg_solver_state_t *initialize_dual_feas_polish_state(
     const pdhg_solver_state_t *original_state);
 
-
 cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
                            const lp_problem_t *original_problem)
 {
     print_initial_info(params, original_problem);
-    rescale_info_t *rescale_info = rescale_problem(params, original_problem);
-    pdhg_solver_state_t *state =
-        initialize_solver_state(original_problem, rescale_info);
+
+    cupdlpx_presolve_info_t *presolve_info = NULL;
+    const lp_problem_t *working_problem = original_problem;
+
+    if (params->presolve)
+    {
+        presolve_info = pslp_presolve(original_problem, params);
+        if (presolve_info->problem_solved_during_presolve)
+        {
+            cupdlpx_result_t *result = create_result_from_presolve(presolve_info, original_problem);
+            cupdlpx_presolve_info_free(presolve_info);
+            pdhg_final_log(result, params);
+            return result;
+        }
+        working_problem = presolve_info->reduced_problem;
+    }
+    rescale_info_t *rescale_info = rescale_problem(params, working_problem);
+    pdhg_solver_state_t *state = initialize_solver_state(params, working_problem, rescale_info);
 
     rescale_info_free(rescale_info);
     initialize_step_size_and_primal_weight(state, params);
     clock_t start_time = clock();
     bool do_restart = false;
-    while (state->termination_reason == TERMINATION_REASON_UNSPECIFIED)
+    while (state->total_count < params->termination_criteria.iteration_limit)
     {
         if ((state->is_this_major_iteration || state->total_count == 0) ||
             (state->total_count % get_print_frequency(state->total_count) == 0))
@@ -122,6 +137,9 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
 
             check_termination_criteria(state, &params->termination_criteria);
             display_iteration_stats(state, params->verbose);
+            if (state->termination_reason != TERMINATION_REASON_UNSPECIFIED) {
+                break;
+            }
         }
 
         if ((state->is_this_major_iteration || state->total_count == 0))
@@ -155,35 +173,65 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
         state->total_count++;
     }
 
-    pdhg_final_log(state, params->verbose, state->termination_reason);
+    if (state->termination_reason == TERMINATION_REASON_UNSPECIFIED)
+    {
+        state->termination_reason = TERMINATION_REASON_ITERATION_LIMIT;
+        compute_residual(state);
+        display_iteration_stats(state, params->verbose);
+    }
 
-    if (params->feasibility_polishing && 
-        state->termination_reason != TERMINATION_REASON_DUAL_INFEASIBLE && 
+    if (params->feasibility_polishing &&
+        state->termination_reason != TERMINATION_REASON_DUAL_INFEASIBLE &&
         state->termination_reason != TERMINATION_REASON_PRIMAL_INFEASIBLE)
     {
         feasibility_polish(params, state);
     }
 
-    cupdlpx_result_t *results = create_result_from_state(state);
+    cupdlpx_result_t *result = create_result_from_state(state, original_problem);
+
+    if (params->presolve && presolve_info)
+    {
+        pslp_postsolve(presolve_info, result, original_problem);
+        cupdlpx_presolve_info_free(presolve_info);
+    }
+
+    pdhg_final_log(result, params);
     pdhg_solver_state_free(state);
-    return results;
+    return result;
+}
+
+__global__ void compute_and_rescale_reduced_cost_kernel(
+    double *reduced_cost,
+    const double *objective,
+    const double *dual_product,
+    const double *variable_rescaling,
+    const double objective_vector_rescaling,
+    const double constraint_bound_rescaling,
+    int n_vars)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n_vars)
+    {
+        reduced_cost[i] = (objective[i] - dual_product[i]) * variable_rescaling[i] / objective_vector_rescaling;
+    }
 }
 
 static pdhg_solver_state_t *
-initialize_solver_state(const lp_problem_t *original_problem,
+initialize_solver_state(const pdhg_parameters_t *params,
+                        const lp_problem_t *working_problem,
                         const rescale_info_t *rescale_info)
 {
     pdhg_solver_state_t *state =
         (pdhg_solver_state_t *)safe_calloc(1, sizeof(pdhg_solver_state_t));
 
-    int n_vars = original_problem->num_variables;
-    int n_cons = original_problem->num_constraints;
+    int n_vars = working_problem->num_variables;
+    int n_cons = working_problem->num_constraints;
     size_t var_bytes = n_vars * sizeof(double);
     size_t con_bytes = n_cons * sizeof(double);
 
     state->num_variables = n_vars;
     state->num_constraints = n_cons;
-    state->objective_constant = original_problem->objective_constant;
+    state->objective_constant = working_problem->objective_constant;
 
     state->constraint_matrix =
         (cu_sparse_matrix_csr_t *)safe_malloc(sizeof(cu_sparse_matrix_csr_t));
@@ -192,13 +240,11 @@ initialize_solver_state(const lp_problem_t *original_problem,
 
     state->constraint_matrix->num_rows = n_cons;
     state->constraint_matrix->num_cols = n_vars;
-    state->constraint_matrix->num_nonzeros =
-        original_problem->constraint_matrix_num_nonzeros;
+    state->constraint_matrix->num_nonzeros = working_problem->constraint_matrix_num_nonzeros;
 
     state->constraint_matrix_t->num_rows = n_vars;
     state->constraint_matrix_t->num_cols = n_cons;
-    state->constraint_matrix_t->num_nonzeros =
-        original_problem->constraint_matrix_num_nonzeros;
+    state->constraint_matrix_t->num_nonzeros = working_problem->constraint_matrix_num_nonzeros;
 
     state->termination_reason = TERMINATION_REASON_UNSPECIFIED;
 
@@ -301,11 +347,11 @@ initialize_solver_state(const lp_problem_t *original_problem,
     ALLOC_ZERO(state->primal_residual, con_bytes);
     ALLOC_ZERO(state->delta_dual_solution, con_bytes);
 
-    if (original_problem->primal_start)
+    if (working_problem->primal_start)
     {
         double *rescaled = (double *)safe_malloc(var_bytes);
         for (int i = 0; i < n_vars; ++i)
-            rescaled[i] = original_problem->primal_start[i] *
+            rescaled[i] = working_problem->primal_start[i] *
                           rescale_info->var_rescale[i] *
                           rescale_info->con_bound_rescale;
         CUDA_CHECK(cudaMemcpy(state->initial_primal_solution, rescaled, var_bytes,
@@ -316,11 +362,11 @@ initialize_solver_state(const lp_problem_t *original_problem,
                               cudaMemcpyHostToDevice));
         free(rescaled);
     }
-    if (original_problem->dual_start)
+    if (working_problem->dual_start)
     {
         double *rescaled = (double *)safe_malloc(con_bytes);
         for (int i = 0; i < n_cons; ++i)
-            rescaled[i] = original_problem->dual_start[i] *
+            rescaled[i] = working_problem->dual_start[i] *
                           rescale_info->con_rescale[i] *
                           rescale_info->obj_vec_rescale;
         CUDA_CHECK(cudaMemcpy(state->initial_dual_solution, rescaled, con_bytes,
@@ -365,8 +411,7 @@ initialize_solver_state(const lp_problem_t *original_problem,
 
     for (int i = 0; i < n_vars; ++i)
     {
-        sum_of_squares += original_problem->objective_vector[i] *
-                          original_problem->objective_vector[i];
+        sum_of_squares += working_problem->objective_vector[i] * working_problem->objective_vector[i];
     }
     state->objective_vector_norm = sqrt(sum_of_squares);
 
@@ -374,8 +419,8 @@ initialize_solver_state(const lp_problem_t *original_problem,
 
     for (int i = 0; i < n_cons; ++i)
     {
-        double lower = original_problem->constraint_lower_bound[i];
-        double upper = original_problem->constraint_upper_bound[i];
+        double lower = working_problem->constraint_lower_bound[i];
+        double upper = working_problem->constraint_upper_bound[i];
 
         if (isfinite(lower) && (lower != upper))
         {
@@ -477,6 +522,17 @@ initialize_solver_state(const lp_problem_t *original_problem,
                           state->num_constraints * sizeof(double),
                           cudaMemcpyHostToDevice));
     free(ones_dual_h);
+    if (params->verbose) {
+        printf("---------------------------------------------------------------------"
+            "------------------\n");
+        printf("%s | %s | %s | %s \n", "   runtime    ", "    objective     ",
+            "  absolute residuals   ", "  relative residuals   ");
+        printf("%s %s | %s %s | %s %s %s | %s %s %s \n", "  iter", "  time ",
+            " pr obj ", "  du obj ", " pr res", " du res", "  gap  ", " pr res",
+            " du res", "  gap  ");
+        printf("---------------------------------------------------------------------"
+            "------------------\n");
+    }
 
     return state;
 }
@@ -926,10 +982,30 @@ void rescale_info_free(rescale_info_t *info)
     free(info);
 }
 
-static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
+static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state, const lp_problem_t *original_problem)
 {
     cupdlpx_result_t *results =
         (cupdlpx_result_t *)safe_calloc(1, sizeof(cupdlpx_result_t));
+
+    // Compute reduced cost
+    CUSPARSE_CHECK(cusparseDnVecSetValues(state->vec_dual_sol,
+                                          state->pdhg_dual_solution));
+    CUSPARSE_CHECK(cusparseDnVecSetValues(state->vec_dual_prod,
+                                          state->dual_product));
+
+    CUSPARSE_CHECK(cusparseSpMV(
+        state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE,
+        state->matAt, state->vec_dual_sol, &HOST_ZERO, state->vec_dual_prod,
+        CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->dual_spmv_buffer));
+
+    compute_and_rescale_reduced_cost_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->dual_slack,
+        state->objective_vector,
+        state->dual_product,
+        state->variable_rescaling,
+        state->objective_vector_rescaling,
+        state->constraint_bound_rescaling,
+        state->num_variables);
 
     rescale_solution(state);
 
@@ -937,6 +1013,8 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
         (double *)safe_malloc(state->num_variables * sizeof(double));
     results->dual_solution =
         (double *)safe_malloc(state->num_constraints * sizeof(double));
+    results->reduced_cost =
+        (double *)safe_malloc(state->num_variables * sizeof(double));
 
     CUDA_CHECK(cudaMemcpy(results->primal_solution, state->pdhg_primal_solution,
                           state->num_variables * sizeof(double),
@@ -944,9 +1022,13 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
     CUDA_CHECK(cudaMemcpy(results->dual_solution, state->pdhg_dual_solution,
                           state->num_constraints * sizeof(double),
                           cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(results->reduced_cost, state->dual_slack,
+                          state->num_variables * sizeof(double),
+                          cudaMemcpyDeviceToHost));
 
-    results->num_variables = state->num_variables;
-    results->num_constraints = state->num_constraints;
+    results->num_variables = original_problem->num_variables;
+    results->num_constraints = original_problem->num_constraints;
+    results->num_nonzeros = original_problem->constraint_matrix_num_nonzeros;
     results->total_count = state->total_count;
     results->rescaling_time_sec = state->rescaling_time_sec;
     results->cumulative_time_sec = state->cumulative_time_sec;
@@ -967,15 +1049,13 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state)
     return results;
 }
 
-
-//Feasibility Polishing
+// Feasibility Polishing
 void feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *state)
 {
     clock_t start_time = clock();
     if (state->relative_primal_residual < params->termination_criteria.eps_feas_polish_relative &&
         state->relative_dual_residual < params->termination_criteria.eps_feas_polish_relative)
     {
-        
         printf("Skipping feasibility polishing as the solution is already sufficiently feasible.\n");
         return;
     }
@@ -989,7 +1069,7 @@ void feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *st
         original_primal_weight = (state->objective_vector_norm + 1.0) / (state->constraint_bound_norm + 1.0);
     }
 
-    //PRIMAL FEASIBILITY POLISHING
+    // PRIMAL FEASIBILITY POLISHING
     pdhg_solver_state_t *primal_state = initialize_primal_feas_polish_state(state);
     primal_state->primal_weight = original_primal_weight;
     primal_state->best_primal_weight = original_primal_weight;
@@ -1005,8 +1085,8 @@ void feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *st
         state->primal_objective_value = primal_state->primal_objective_value;
     }
     state->feasibility_iteration += primal_state->total_count - 1;
-    
-    //DUAL FEASIBILITY POLISHING
+
+    // DUAL FEASIBILITY POLISHING
     pdhg_solver_state_t *dual_state = initialize_dual_feas_polish_state(state);
     dual_state->primal_weight = original_primal_weight;
     dual_state->best_primal_weight = original_primal_weight;
@@ -1025,7 +1105,7 @@ void feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_t *st
 
     state->objective_gap = fabs(state->primal_objective_value - state->dual_objective_value);
     state->relative_objective_gap = state->objective_gap / (1.0 + fabs(state->primal_objective_value) + fabs(state->dual_objective_value));
-    
+
     // FINAL LOGGING
     pdhg_feas_polish_final_log(primal_state, dual_state, params->verbose);
     primal_feas_polish_state_free(primal_state);
@@ -1130,7 +1210,7 @@ void dual_feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_
 static pdhg_solver_state_t *initialize_primal_feas_polish_state(
     const pdhg_solver_state_t *original_state)
 {
-    pdhg_solver_state_t *primal_state = (pdhg_solver_state_t *)malloc(sizeof(pdhg_solver_state_t));
+    pdhg_solver_state_t *primal_state = (pdhg_solver_state_t *)safe_malloc(sizeof(pdhg_solver_state_t));
     *primal_state = *original_state;
     int num_var = original_state->num_variables;
     int num_cons = original_state->num_constraints;
@@ -1139,22 +1219,22 @@ static pdhg_solver_state_t *initialize_primal_feas_polish_state(
     CUDA_CHECK(cudaMalloc(&dest, bytes)); \
     CUDA_CHECK(cudaMemset(dest, 0, bytes));
 
-    //RESET PROBLEM TO FEASIBILITY PROBLEM
+    // RESET PROBLEM TO FEASIBILITY PROBLEM
     ALLOC_ZERO(primal_state->objective_vector, num_var * sizeof(double));
     primal_state->objective_constant = 0.0;
 
-#define ALLOC_AND_COPY_DEV(dest, src, bytes)  \
-    CUDA_CHECK(cudaMalloc(&dest, bytes)); \
+#define ALLOC_AND_COPY_DEV(dest, src, bytes) \
+    CUDA_CHECK(cudaMalloc(&dest, bytes));    \
     CUDA_CHECK(cudaMemcpy(dest, src, bytes, cudaMemcpyDeviceToDevice));
 
-    //ALLOCATE AND COPY SOLUTION VECTORS
+    // ALLOCATE AND COPY SOLUTION VECTORS
     ALLOC_AND_COPY_DEV(primal_state->initial_primal_solution, original_state->initial_primal_solution, num_var * sizeof(double));
     ALLOC_AND_COPY_DEV(primal_state->current_primal_solution, original_state->current_primal_solution, num_var * sizeof(double));
     ALLOC_AND_COPY_DEV(primal_state->pdhg_primal_solution, original_state->pdhg_primal_solution, num_var * sizeof(double));
     ALLOC_AND_COPY_DEV(primal_state->reflected_primal_solution, original_state->reflected_primal_solution, num_var * sizeof(double));
     ALLOC_AND_COPY_DEV(primal_state->primal_product, original_state->primal_product, num_cons * sizeof(double));
 
-    //ALLOC ZERO FOR OTHERS
+    // ALLOC ZERO FOR OTHERS
     ALLOC_ZERO(primal_state->initial_dual_solution, num_cons * sizeof(double));
     ALLOC_ZERO(primal_state->current_dual_solution, num_cons * sizeof(double));
     ALLOC_ZERO(primal_state->pdhg_dual_solution, num_cons * sizeof(double));
@@ -1168,7 +1248,7 @@ static pdhg_solver_state_t *initialize_primal_feas_polish_state(
     ALLOC_ZERO(primal_state->delta_primal_solution, num_var * sizeof(double));
     ALLOC_ZERO(primal_state->delta_dual_solution, num_cons * sizeof(double));
 
-    //RESET SCALAR
+    // RESET SCALAR
     primal_state->primal_weight_error_sum = 0.0;
     primal_state->primal_weight_last_error = 0.0;
     primal_state->best_primal_weight = 0.0;
@@ -1184,7 +1264,7 @@ static pdhg_solver_state_t *initialize_primal_feas_polish_state(
     primal_state->cumulative_time_sec = 0.0;
     primal_state->best_primal_dual_residual_gap = INFINITY;
 
-    //IGNORE DUAL RESIDUAL AND OBJECTIVE GAP
+    // IGNORE DUAL RESIDUAL AND OBJECTIVE GAP
     primal_state->relative_dual_residual = 0.0;
     primal_state->absolute_dual_residual = 0.0;
     primal_state->relative_objective_gap = 0.0;
@@ -1195,26 +1275,26 @@ static pdhg_solver_state_t *initialize_primal_feas_polish_state(
 
 void primal_feas_polish_state_free(pdhg_solver_state_t *state)
 {
-    #define SAFE_CUDA_FREE(p)   \
-    if ((p) != NULL) {          \
-        CUDA_CHECK(cudaFree(p));\
-        (p) = NULL;             \
-    }                           \
-    
-    if (!state) return;
+#define SAFE_CUDA_FREE(p)        \
+    if ((p) != NULL)             \
+    {                            \
+        CUDA_CHECK(cudaFree(p)); \
+        (p) = NULL;              \
+    }
+
+    if (!state)
+        return;
     SAFE_CUDA_FREE(state->objective_vector);
     SAFE_CUDA_FREE(state->initial_primal_solution);
     SAFE_CUDA_FREE(state->current_primal_solution);
     SAFE_CUDA_FREE(state->pdhg_primal_solution);
     SAFE_CUDA_FREE(state->reflected_primal_solution);
-
     SAFE_CUDA_FREE(state->dual_product);
     SAFE_CUDA_FREE(state->initial_dual_solution);
     SAFE_CUDA_FREE(state->current_dual_solution);
     SAFE_CUDA_FREE(state->pdhg_dual_solution);
     SAFE_CUDA_FREE(state->reflected_dual_solution);
     SAFE_CUDA_FREE(state->primal_product);
-    
     SAFE_CUDA_FREE(state->primal_slack);
     SAFE_CUDA_FREE(state->dual_slack);
     SAFE_CUDA_FREE(state->primal_residual);
@@ -1234,28 +1314,27 @@ __global__ void zero_finite_value_vectors_kernel(
             vec[idx] = 0.0;
     }
 }
-    
 
 static pdhg_solver_state_t *initialize_dual_feas_polish_state(
     const pdhg_solver_state_t *original_state)
 {
-    pdhg_solver_state_t *dual_state = (pdhg_solver_state_t *)malloc(sizeof(pdhg_solver_state_t));
+    pdhg_solver_state_t *dual_state = (pdhg_solver_state_t *)safe_malloc(sizeof(pdhg_solver_state_t));
     *dual_state = *original_state;
     int num_var = original_state->num_variables;
     int num_cons = original_state->num_constraints;
 
-    #define ALLOC_AND_COPY_DEV(dest, src, bytes)  \
-        CUDA_CHECK(cudaMalloc(&dest, bytes)); \
-        CUDA_CHECK(cudaMemcpy(dest, src, bytes, cudaMemcpyDeviceToDevice));
+#define ALLOC_AND_COPY_DEV(dest, src, bytes) \
+    CUDA_CHECK(cudaMalloc(&dest, bytes));    \
+    CUDA_CHECK(cudaMemcpy(dest, src, bytes, cudaMemcpyDeviceToDevice));
 
-    //RESET PROBLEM TO DUAL FEASIBILITY PROBLEM
-    #define SET_FINITE_TO_ZERO(vec, n) \
-        { \
-            int threads = 256; \
-            int blocks = (n + threads - 1) / threads; \
-            zero_finite_value_vectors_kernel<<<blocks, threads>>>(vec, n); \
-            CUDA_CHECK(cudaDeviceSynchronize()); \
-        }
+// RESET PROBLEM TO DUAL FEASIBILITY PROBLEM
+#define SET_FINITE_TO_ZERO(vec, n)                                     \
+    {                                                                  \
+        int threads = 256;                                             \
+        int blocks = (n + threads - 1) / threads;                      \
+        zero_finite_value_vectors_kernel<<<blocks, threads>>>(vec, n); \
+        CUDA_CHECK(cudaDeviceSynchronize());                           \
+    }
 
     ALLOC_AND_COPY_DEV(dual_state->constraint_lower_bound, original_state->constraint_lower_bound, num_cons * sizeof(double));
     ALLOC_AND_COPY_DEV(dual_state->constraint_upper_bound, original_state->constraint_upper_bound, num_cons * sizeof(double));
@@ -1267,16 +1346,16 @@ static pdhg_solver_state_t *initialize_dual_feas_polish_state(
     SET_FINITE_TO_ZERO(dual_state->variable_lower_bound, num_var);
     SET_FINITE_TO_ZERO(dual_state->variable_upper_bound, num_var);
 
-    #define ALLOC_ZERO(dest, bytes)           \
-        CUDA_CHECK(cudaMalloc(&dest, bytes)); \
-        CUDA_CHECK(cudaMemset(dest, 0, bytes));
+#define ALLOC_ZERO(dest, bytes)           \
+    CUDA_CHECK(cudaMalloc(&dest, bytes)); \
+    CUDA_CHECK(cudaMemset(dest, 0, bytes));
 
     ALLOC_ZERO(dual_state->constraint_lower_bound_finite_val, num_cons * sizeof(double));
     ALLOC_ZERO(dual_state->constraint_upper_bound_finite_val, num_cons * sizeof(double));
     ALLOC_ZERO(dual_state->variable_lower_bound_finite_val, num_var * sizeof(double));
     ALLOC_ZERO(dual_state->variable_upper_bound_finite_val, num_var * sizeof(double));
 
-    //ALLOCATE AND COPY SOLUTION VECTORS
+    // ALLOCATE AND COPY SOLUTION VECTORS
     ALLOC_AND_COPY_DEV(dual_state->initial_dual_solution, original_state->initial_dual_solution, num_cons * sizeof(double));
     ALLOC_AND_COPY_DEV(dual_state->current_dual_solution, original_state->current_dual_solution, num_cons * sizeof(double));
     ALLOC_AND_COPY_DEV(dual_state->pdhg_dual_solution, original_state->pdhg_dual_solution, num_cons * sizeof(double));
@@ -1284,7 +1363,7 @@ static pdhg_solver_state_t *initialize_dual_feas_polish_state(
     ALLOC_AND_COPY_DEV(dual_state->dual_product, original_state->dual_product, num_var * sizeof(double));
     ALLOC_AND_COPY_DEV(dual_state->dual_slack, original_state->dual_slack, num_var * sizeof(double));
 
-    //ALLOC ZERO FOR OTHERS
+    // ALLOC ZERO FOR OTHERS
     ALLOC_ZERO(dual_state->initial_primal_solution, num_var * sizeof(double));
     ALLOC_ZERO(dual_state->current_primal_solution, num_var * sizeof(double));
     ALLOC_ZERO(dual_state->pdhg_primal_solution, num_var * sizeof(double));
@@ -1296,7 +1375,7 @@ static pdhg_solver_state_t *initialize_dual_feas_polish_state(
     ALLOC_ZERO(dual_state->delta_primal_solution, num_var * sizeof(double));
     ALLOC_ZERO(dual_state->delta_dual_solution, num_cons * sizeof(double));
 
-    //RESET SCALAR
+    // RESET SCALAR
     dual_state->primal_weight_error_sum = 0.0;
     dual_state->primal_weight_last_error = 0.0;
     dual_state->best_primal_weight = 0.0;
@@ -1312,7 +1391,7 @@ static pdhg_solver_state_t *initialize_dual_feas_polish_state(
     dual_state->cumulative_time_sec = 0.0;
     dual_state->best_primal_dual_residual_gap = INFINITY;
 
-    //IGNORE PRIMAL RESIDUAL AND OBJECTIVE GAP
+    // IGNORE PRIMAL RESIDUAL AND OBJECTIVE GAP
     dual_state->relative_primal_residual = 0.0;
     dual_state->absolute_primal_residual = 0.0;
     dual_state->relative_objective_gap = 0.0;
@@ -1322,13 +1401,15 @@ static pdhg_solver_state_t *initialize_dual_feas_polish_state(
 
 void dual_feas_polish_state_free(pdhg_solver_state_t *state)
 {
-    #define SAFE_CUDA_FREE(p)   \
-    if ((p) != NULL) {          \
-        CUDA_CHECK(cudaFree(p));\
-        (p) = NULL;             \
-    }                           \
-    
-    if (!state) return;
+#define SAFE_CUDA_FREE(p)        \
+    if ((p) != NULL)             \
+    {                            \
+        CUDA_CHECK(cudaFree(p)); \
+        (p) = NULL;              \
+    }
+
+    if (!state)
+        return;
     SAFE_CUDA_FREE(state->constraint_lower_bound);
     SAFE_CUDA_FREE(state->constraint_upper_bound);
     SAFE_CUDA_FREE(state->variable_lower_bound);
@@ -1349,7 +1430,7 @@ void dual_feas_polish_state_free(pdhg_solver_state_t *state)
     SAFE_CUDA_FREE(state->pdhg_dual_solution);
     SAFE_CUDA_FREE(state->reflected_dual_solution);
     SAFE_CUDA_FREE(state->primal_product);
-    
+
     SAFE_CUDA_FREE(state->primal_slack);
     SAFE_CUDA_FREE(state->dual_slack);
     SAFE_CUDA_FREE(state->primal_residual);
@@ -1428,5 +1509,3 @@ static void compute_dual_fixed_point_error(pdhg_solver_state_t *state)
                                    &dual_norm));
     state->fixed_point_error = dual_norm * dual_norm / state->primal_weight;
 }
-
-

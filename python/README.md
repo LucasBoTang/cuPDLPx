@@ -153,10 +153,11 @@ Below is a list of commonly used parameters, their internal keys, and descriptio
 | `RestartNecessaryReduction` | `necessary_reduction_for_restart` | float | `0.5` | Necessary reduction factor required for a restart. |
 | `RestartKp` | `k_p` | float | `0.99` | Proportional coefficient for PID-controlled primal weight updates. |
 | `ReflectionCoeff` | `reflection_coefficient` | float | `1.0` | Reflection coefficient. |
-| `FeasibilityPolishing` | `feasibility_polishing` | bool | `False` | Run feasibility polishing process.|
-| `FeasibilityPolishingTol` | `eps_feas_polish_relative` | float | `1e-6` | Relative tolerance for primal/dual residual.  |
 | `SVMaxIter` | `sv_max_iter` | int | 5000 | Maximum number of iterations for the power method |
 | `SVTol`| `sv_tol` | float | `1e-4` | Termination tolerance for the power method |
+| `Presolve`| `presolve` | float | `True` | Whether to use presolve. |
+| `FeasibilityPolishing` | `feasibility_polishing` | bool | `False` | Run feasibility polishing process.|
+| `FeasibilityPolishingTol` | `eps_feas_polish_relative` | float | `1e-6` | Relative tolerance for primal/dual residual.  |
 
 They can be set in multiple ways:
 

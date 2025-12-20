@@ -205,6 +205,8 @@ const char *termination_reason_to_string(termination_reason_t reason)
         return "PRIMAL_INFEASIBLE";
     case TERMINATION_REASON_DUAL_INFEASIBLE:
         return "DUAL_INFEASIBLE";
+    case TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED:
+        return "INFEASIBLE_OR_UNBOUNDED";
     case TERMINATION_REASON_TIME_LIMIT:
         return "TIME_LIMIT";
     case TERMINATION_REASON_ITERATION_LIMIT:
@@ -346,6 +348,8 @@ void set_default_parameters(pdhg_parameters_t *params)
     params->restart_params.k_i = 0.01;
     params->restart_params.k_d = 0.0;
     params->restart_params.i_smooth = 0.3;
+
+    params->presolve = true;
 }
 
 #define PRINT_DIFF_INT(name, current, default_val) \
@@ -390,10 +394,7 @@ void print_initial_info(const pdhg_parameters_t *params,
     printf("---------------------------------------------------------------------"
            "------------------\n");
 
-    printf("problem:\n");
-    printf("  variables     : %d\n", problem->num_variables);
-    printf("  constraints   : %d\n", problem->num_constraints);
-    printf("  nonzeros(A)   : %d\n", problem->constraint_matrix_num_nonzeros);
+    printf("problem: %d rows, %d columns, %d nonzeros\n", problem->num_constraints, problem->num_variables, problem->constraint_matrix_num_nonzeros);
 
     printf("settings:\n");
     printf("  iter_limit         : %d\n",
@@ -406,6 +407,7 @@ void print_initial_info(const pdhg_parameters_t *params,
            params->termination_criteria.eps_feasible_relative);
     printf("  eps_infeas_detect  : %.1e\n",
            params->termination_criteria.eps_infeasible);
+
     PRINT_DIFF_INT("l_inf_ruiz_iter",
                    params->l_inf_ruiz_iterations, 
                    default_params.l_inf_ruiz_iterations);
@@ -449,22 +451,54 @@ void print_initial_info(const pdhg_parameters_t *params,
 #undef PRINT_DIFF_DBL
 #undef PRINT_DIFF_BOOL
 
-void pdhg_final_log(const pdhg_solver_state_t *state, bool verbose,
-                    termination_reason_t reason)
+void pdhg_final_log(
+    const cupdlpx_result_t *result,
+    const pdhg_parameters_t *params)
 {
-    if (verbose)
+    if (params->verbose)
     {
         printf("-------------------------------------------------------------------"
                "--------------------\n");
     }
     printf("Solution Summary\n");
-    printf("  Status        : %s\n", termination_reason_to_string(reason));
-    printf("  Iterations    : %d\n", state->total_count - 1);
-    printf("  Solve time    : %.3g sec\n", state->cumulative_time_sec);
-    printf("  Primal obj    : %.10g\n", state->primal_objective_value);
-    printf("  Dual obj      : %.10g\n", state->dual_objective_value);
-    printf("  Primal infeas : %.3e\n", state->relative_primal_residual);
-    printf("  Dual infeas   : %.3e\n", state->relative_dual_residual);
+    printf("  Status             : %s\n", termination_reason_to_string(result->termination_reason));
+    if (params->presolve)
+    {
+        printf("  Presolve time      : %.3g sec\n", result->presolve_time);
+    }
+    printf("  Solve time         : %.3g sec\n", result->cumulative_time_sec);
+    printf("  Iterations         : %d\n", result->total_count);
+    printf("  Primal objective   : %.10g\n", result->primal_objective_value);
+    printf("  Dual objective     : %.10g\n", result->dual_objective_value);
+    printf("  Objective gap      : %.3e\n", result->relative_objective_gap);
+    printf("  Primal infeas      : %.3e\n", result->relative_primal_residual);
+    printf("  Dual infeas        : %.3e\n", result->relative_dual_residual);
+
+    // if (stats != NULL && stats->n_rows_original > 0) {
+    //     printf("\nPresolve Summary\n");
+    //     printf("  [Dimensions]\n");
+    //     printf("  Original           : %d rows, %d cols, %d nnz\n",
+    //            stats->n_rows_original, stats->n_cols_original, stats->nnz_original);
+    //     printf("  Reduced            : %d rows, %d cols, %d nnz\n",
+    //            stats->n_rows_reduced, stats->n_cols_reduced, stats->nnz_reduced);
+
+    //     printf("  [Reduction Details (NNZ Removed)]\n");
+    //     printf("  Trivial            : %d\n", stats->nnz_removed_trivial);
+    //     printf("  Fast               : %d\n", stats->nnz_removed_fast);
+    //     printf("  Primal Propagation : %d\n", stats->nnz_removed_primal_propagation);
+    //     printf("  Parallel Rows      : %d\n", stats->nnz_removed_parallel_rows);
+    //     printf("  Parallel Cols      : %d\n", stats->nnz_removed_parallel_cols);
+
+    //     printf("  [Timing]\n");
+    //     printf("  Total Presolve     : %.3g sec\n", stats->presolve_total_time);
+    //     printf("  Init               : %.3g sec\n", stats->ps_time_init);
+    //     printf("  Fast               : %.3g sec\n", stats->ps_time_fast);
+    //     printf("  Medium             : %.3g sec\n", stats->ps_time_medium);
+    //     printf("  Primal Propagation : %.3g sec\n", stats->ps_time_primal_propagation);
+    //     printf("  Parallel Rows      : %.3g sec\n", stats->ps_time_parallel_rows);
+    //     printf("  Parallel Cols      : %.3g sec\n", stats->ps_time_parallel_cols);
+    //     printf("  Postsolve          : %.3g sec\n", stats->ps_time_post_solve);
+    // }
 }
 
 void display_iteration_stats(const pdhg_solver_state_t *state, bool verbose)
@@ -1096,9 +1130,10 @@ void print_initial_feas_polish_info(bool is_primal_polish, const pdhg_parameters
            is_primal_polish ? "Primal" : "Dual",
            params->termination_criteria.eps_feas_polish_relative);
     printf("---------------------------------------------------------------------------------------\n");
-    if (is_primal_polish) printf("%s %s |  %s  | %s | %s \n",  "  iter", "  time ", "pr obj", " abs pr res ", " rel pr res ");
-    // else printf("%s %s | %s | %s \n",  "  iter", "  time ", " abs du res ", " rel du res ");
-    else printf("%s %s |  %s  | %s | %s \n", "  iter", "  time ", "du obj", " abs du res ", " rel du res ");  
+    if (is_primal_polish)
+        printf("%s %s |  %s  | %s | %s \n", "  iter", "  time ", "pr obj", " abs pr res ", " rel pr res ");
+    else
+        printf("%s %s |  %s  | %s | %s \n", "  iter", "  time ", "du obj", " abs du res ", " rel du res ");
     printf("---------------------------------------------------------------------------------------\n");
 }
 
@@ -1120,7 +1155,7 @@ void pdhg_feas_polish_final_log(const pdhg_solver_state_t *primal_state, const p
     printf("  Primal Dual Gap      : %.3e\n", fabs(primal_state->primal_objective_value - dual_state->dual_objective_value) / (1.0 + fabs(primal_state->primal_objective_value) + fabs(dual_state->dual_objective_value)));
 }
 
-void display_feas_polish_iteration_stats(const pdhg_solver_state_t *state, bool verbose,  bool is_primal_polish)
+void display_feas_polish_iteration_stats(const pdhg_solver_state_t *state, bool verbose, bool is_primal_polish)
 {
     if (!verbose)
     {
@@ -1131,23 +1166,22 @@ void display_feas_polish_iteration_stats(const pdhg_solver_state_t *state, bool 
         if (is_primal_polish)
         {
             printf("%6d %.1e | %8.1e |    %.1e   |   %.1e   \n",
-                state->total_count,
-                state->cumulative_time_sec,
-                state->primal_objective_value,
-                state->absolute_primal_residual,
-                state->relative_primal_residual);
+                   state->total_count,
+                   state->cumulative_time_sec,
+                   state->primal_objective_value,
+                   state->absolute_primal_residual,
+                   state->relative_primal_residual);
         }
         else
         {
             printf("%6d %.1e | %8.1e |    %.1e   |   %.1e   \n",
-                state->total_count,
-                state->cumulative_time_sec,
-                state->dual_objective_value,
-                state->absolute_dual_residual,
-                state->relative_dual_residual);
+                   state->total_count,
+                   state->cumulative_time_sec,
+                   state->dual_objective_value,
+                   state->absolute_dual_residual,
+                   state->relative_dual_residual);
         }
     }
-
 }
 
 __global__ void compute_primal_feas_polish_residual_kernel(
@@ -1222,7 +1256,7 @@ void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_so
     CUSPARSE_CHECK(cusparseSpMV(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matAt, state->vec_dual_sol, &HOST_ZERO, state->vec_dual_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->dual_spmv_buffer));
 
     compute_dual_feas_polish_residual_kerenl<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
-        state->dual_residual, 
+        state->dual_residual,
         state->pdhg_dual_solution,
         state->dual_product,
         state->dual_slack, state->objective_vector,
@@ -1230,8 +1264,7 @@ void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_so
         state->primal_slack,
         ori_state->constraint_lower_bound_finite_val,
         ori_state->constraint_upper_bound_finite_val,
-        state->num_variables, state->num_constraints
-    );
+        state->num_variables, state->num_constraints);
 
     CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables, state->dual_residual, 1, &state->absolute_dual_residual));
     state->absolute_dual_residual /= state->objective_vector_rescaling;

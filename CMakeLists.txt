@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.20)
 project(cupdlpx LANGUAGES C CXX CUDA)
 
 set(CUPDLPX_VERSION_MAJOR 0)
-set(CUPDLPX_VERSION_MINOR 1)
-set(CUPDLPX_VERSION_PATCH 5)
+set(CUPDLPX_VERSION_MINOR 2)
+set(CUPDLPX_VERSION_PATCH 0)
 
 set(CUPDLPX_VERSION "${CUPDLPX_VERSION_MAJOR}.${CUPDLPX_VERSION_MINOR}.${CUPDLPX_VERSION_PATCH}")
 add_compile_definitions(CUPDLPX_VERSION="${CUPDLPX_VERSION}")
@@ -75,6 +75,20 @@ if (CUPDLPX_BUILD_PYTHON)
     find_package(Python3 COMPONENTS Interpreter REQUIRED) # For versioning script and pybind11
 endif()
 
+include(FetchContent)
+
+set(PSLP_VERSION_TAG "v0.0.2")
+
+FetchContent_Declare(
+  pslp
+  GIT_REPOSITORY https://github.com/dance858/PSLP.git
+  GIT_TAG        ${PSLP_VERSION_TAG}
+)
+
+FetchContent_MakeAvailable(pslp)
+include_directories(${pslp_SOURCE_DIR}/PSLP)
+add_compile_definitions(PSLP_VERSION=\"${PSLP_VERSION_TAG}\")
+
 # -----------------------------------------------------------------------------
 # SOURCE DISCOVERY & TARGET DEFINITION
 # -----------------------------------------------------------------------------
@@ -100,6 +114,7 @@ set(CORE_LINK_LIBS PUBLIC
   CUDA::cublas
   CUDA::cusparse
   ZLIB::ZLIB
+  PSLP
 )
 
 # -----------------------------------------------------------------------------

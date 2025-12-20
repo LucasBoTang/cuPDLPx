@@ -56,4 +56,6 @@ _PARAM_ALIAS = {
     # singular value estimation (power method)
     "SVMaxIter": "sv_max_iter",
     "SVTol": "sv_tol",
+    # presolve
+    "Presolve": "presolve",
 }

@@ -215,20 +215,20 @@ static void pock_chambolle_rescaling(lp_problem_t *problem, double alpha,
 }
 
 rescale_info_t *rescale_problem(const pdhg_parameters_t *params,
-                                const lp_problem_t *original_problem)
+                                const lp_problem_t *working_problem)
 {
     clock_t start_rescaling = clock();
     rescale_info_t *rescale_info =
         (rescale_info_t *)safe_calloc(1, sizeof(rescale_info_t));
-    rescale_info->scaled_problem = deepcopy_problem(original_problem);
+    rescale_info->scaled_problem = deepcopy_problem(working_problem);
     if (rescale_info->scaled_problem == NULL)
     {
         fprintf(stderr,
                 "Failed to create a copy of the problem. Aborting rescale.\n");
         return NULL;
     }
-    int num_cons = original_problem->num_constraints;
-    int num_vars = original_problem->num_variables;
+    int num_cons = working_problem->num_constraints;
+    int num_vars = working_problem->num_variables;
 
     rescale_info->con_rescale = safe_malloc(num_cons * sizeof(double));
     rescale_info->var_rescale = safe_malloc(num_vars * sizeof(double));
