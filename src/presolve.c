@@ -184,7 +184,7 @@ void pslp_postsolve(cupdlpx_presolve_info_t *info,
     memcpy(result->primal_solution, info->presolver->sol->x, original_prob->num_variables * sizeof(double));
     memcpy(result->dual_solution, info->presolver->sol->y, original_prob->num_constraints * sizeof(double));
     memcpy(result->reduced_cost, info->presolver->sol->z, original_prob->num_variables * sizeof(double));
-    result->primal_objective_value = info->presolver->sol->obj;
+    // result->primal_objective_value = info->presolver->sol->obj; // This is a bug in PSLP. We don't need to updated primal_objective_value since offset has been updated during presolve. Therefore, the original problem and reduced problem have the same objective value.
     result->presolve_time = info->presolve_time;
     // if (info->presolver->stats != NULL) {
     //     result->presolve_stats = *(info->presolver->stats);
