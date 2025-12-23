@@ -1045,6 +1045,11 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state, co
     results->termination_reason = state->termination_reason;
     results->feasibility_polishing_time = state->feasibility_polishing_time;
     results->feasibility_iteration = state->feasibility_iteration;
+    // if (presolve_stats != NULL) {
+    //     results->presolve_stats = *presolve_stats;
+    // } else {
+    //     memset(&(results->presolve_stats), 0, sizeof(PresolveStats));
+    // }
 
     return results;
 }

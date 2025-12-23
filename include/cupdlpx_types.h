@@ -115,6 +115,7 @@ extern "C"
 		double cumulative_time_sec;
 		double presolve_time;
 		int presolve_status;
+		// PresolveStats presolve_stats;
 
 		double absolute_primal_residual;
 		double relative_primal_residual;

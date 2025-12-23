@@ -8,7 +8,7 @@ project(cupdlpx LANGUAGES C CXX CUDA)
 
 set(CUPDLPX_VERSION_MAJOR 0)
 set(CUPDLPX_VERSION_MINOR 2)
-set(CUPDLPX_VERSION_PATCH 0)
+set(CUPDLPX_VERSION_PATCH 1)
 
 set(CUPDLPX_VERSION "${CUPDLPX_VERSION_MAJOR}.${CUPDLPX_VERSION_MINOR}.${CUPDLPX_VERSION_PATCH}")
 add_compile_definitions(CUPDLPX_VERSION="${CUPDLPX_VERSION}")
@@ -77,7 +77,7 @@ endif()
 
 include(FetchContent)
 
-set(PSLP_VERSION_TAG "v0.0.2")
+set(PSLP_VERSION_TAG "v0.0.3")
 
 FetchContent_Declare(
   pslp

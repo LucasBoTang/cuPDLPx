@@ -124,6 +124,23 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
         fprintf(outfile, "Reduced Rows: %d\n", result->num_reduced_constraints);
         fprintf(outfile, "Reduced Columns: %d\n", result->num_reduced_variables);
         fprintf(outfile, "Reduced Nonzeros: %d\n", result->num_reduced_nonzeros);
+
+        // if (result->presolve_stats.n_cols_original > 0) {
+        //     fprintf(outfile, "NNZ Removed Trivial: %d\n", result->presolve_stats.nnz_removed_trivial);
+        //     fprintf(outfile, "NNZ Removed Fast: %d\n", result->presolve_stats.nnz_removed_fast);
+        //     fprintf(outfile, "NNZ Removed Primal Propagation: %d\n", result->presolve_stats.nnz_removed_primal_propagation);
+        //     fprintf(outfile, "NNZ Removed Parallel Rows: %d\n", result->presolve_stats.nnz_removed_parallel_rows);
+        //     fprintf(outfile, "NNZ Removed Parallel Cols: %d\n", result->presolve_stats.nnz_removed_parallel_cols);
+            
+        //     fprintf(outfile, "Presolve Time Init (sec): %e\n", result->presolve_stats.time_init);
+        //     fprintf(outfile, "Presolve Time Run (sec): %e\n", result->presolve_stats.time_presolve);
+        //     fprintf(outfile, "Presolve Time Fast (sec): %e\n", result->presolve_stats.time_fast_reductions);
+        //     fprintf(outfile, "Presolve Time Medium (sec): %e\n", result->presolve_stats.time_medium_reductions);
+        //     fprintf(outfile, "Presolve Time Primal Proppagation (sec): %e\n", result->presolve_stats.time_primal_propagation);
+        //     fprintf(outfile, "Presolve Time Parallel Rows (sec): %e\n", result->presolve_stats.time_parallel_rows);
+        //     fprintf(outfile, "Presolve Time Parallel Cols (sec): %e\n", result->presolve_stats.time_parallel_cols);
+        //     fprintf(outfile, "Postsolve Time (sec): %e\n", result->presolve_stats.time_postsolve);
+        // }
     }
     if (result->feasibility_polishing_time > 0.0)
     {

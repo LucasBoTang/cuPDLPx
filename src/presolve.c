@@ -21,8 +21,6 @@ const char *get_presolve_status_str(enum PresolveStatus_ status)
         return "UNCHANGED";
     case REDUCED:
         return "REDUCED";
-    case UNBOUNDED:
-        return "UNBOUNDED";
     case INFEASIBLE:
         return "INFEASIBLE";
     case UNBNDORINFEAS:
@@ -104,7 +102,7 @@ cupdlpx_presolve_info_t *pslp_presolve(const lp_problem_t *original_prob, const 
         printf("  %-15s : %.3g sec\n", "presolve time", info->presolve_time);
     }
 
-    if (status & INFEASIBLE || status & UNBOUNDED)
+    if (status & INFEASIBLE || status & UNBNDORINFEAS)
     {
         info->problem_solved_during_presolve = true;
         info->reduced_problem = NULL;
@@ -134,10 +132,6 @@ cupdlpx_result_t *create_result_from_presolve(const cupdlpx_presolve_info_t *inf
     {
         result->termination_reason = TERMINATION_REASON_PRIMAL_INFEASIBLE;
     }
-    else if (info->presolve_status == UNBOUNDED)
-    {
-        result->termination_reason = TERMINATION_REASON_DUAL_INFEASIBLE;
-    }
     else if (info->presolve_status == UNBNDORINFEAS)
     {
         result->termination_reason = TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED;
@@ -154,6 +148,7 @@ cupdlpx_result_t *create_result_from_presolve(const cupdlpx_presolve_info_t *inf
     result->num_reduced_nonzeros = info->presolver->reduced_prob->nnz;
     result->presolve_status = info->presolve_status;
     result->presolve_time = info->presolve_time;
+    // result->presolve_stats = *(info->presolver->stats);
     // TODO: Verify if setting solution pointers to NULL affects Python/Julia bindings.
     if (result->num_variables > 0)
     {
@@ -191,6 +186,9 @@ void pslp_postsolve(cupdlpx_presolve_info_t *info,
     memcpy(result->reduced_cost, info->presolver->sol->z, original_prob->num_variables * sizeof(double));
     result->primal_objective_value = info->presolver->sol->obj;
     result->presolve_time = info->presolve_time;
+    // if (info->presolver->stats != NULL) {
+    //     result->presolve_stats = *(info->presolver->stats);
+    // }
 }
 
 void cupdlpx_presolve_info_free(cupdlpx_presolve_info_t *info)
