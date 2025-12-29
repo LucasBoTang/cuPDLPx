@@ -125,7 +125,7 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
         if ((state->is_this_major_iteration || state->total_count == 0) ||
             (state->total_count % get_print_frequency(state->total_count) == 0))
         {
-            compute_residual(state);
+            compute_residual(state, params->optimality_norm);
             if (state->is_this_major_iteration &&
                 state->total_count < 3 * params->termination_evaluation_frequency)
             {
@@ -176,7 +176,7 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
     if (state->termination_reason == TERMINATION_REASON_UNSPECIFIED)
     {
         state->termination_reason = TERMINATION_REASON_ITERATION_LIMIT;
-        compute_residual(state);
+        compute_residual(state, params->optimality_norm);
         display_iteration_stats(state, params->verbose);
     }
 
@@ -408,32 +408,59 @@ initialize_solver_state(const pdhg_parameters_t *params,
     free(temp_host);
 
     double sum_of_squares = 0.0;
+    double max_val = 0.0;
+    double val = 0.0;
 
     for (int i = 0; i < n_vars; ++i)
     {
-        sum_of_squares += working_problem->objective_vector[i] * working_problem->objective_vector[i];
+        if (params->optimality_norm == NORM_TYPE_L_INF) {
+            val = fabs(working_problem->objective_vector[i]);
+            if (val > max_val) max_val = val;
+        } else {
+            sum_of_squares += working_problem->objective_vector[i] * working_problem->objective_vector[i];
+        }
     }
-    state->objective_vector_norm = sqrt(sum_of_squares);
+
+    if (params->optimality_norm == NORM_TYPE_L_INF) {
+        state->objective_vector_norm = max_val;
+    } else {
+        state->objective_vector_norm = sqrt(sum_of_squares);
+    }
 
     sum_of_squares = 0.0;
+    max_val = 0.0;
+    val = 0.0;
 
     for (int i = 0; i < n_cons; ++i)
     {
         double lower = working_problem->constraint_lower_bound[i];
         double upper = working_problem->constraint_upper_bound[i];
 
-        if (isfinite(lower) && (lower != upper))
-        {
-            sum_of_squares += lower * lower;
-        }
-
-        if (isfinite(upper))
-        {
-            sum_of_squares += upper * upper;
+        if (params->optimality_norm == NORM_TYPE_L_INF) {
+            if (isfinite(lower) && (lower != upper)) {
+                val = fabs(lower);
+                if (val > max_val) max_val = val;
+            }
+            if (isfinite(upper)) {
+                val = fabs(upper);
+                if (val > max_val) max_val = val;
+            }
+        } else {
+            if (isfinite(lower) && (lower != upper)) {
+                sum_of_squares += lower * lower;
+            }
+            if (isfinite(upper)) {
+                sum_of_squares += upper * upper;
+            }
         }
     }
 
-    state->constraint_bound_norm = sqrt(sum_of_squares);
+    if (params->optimality_norm == NORM_TYPE_L_INF) {
+        state->constraint_bound_norm = max_val;
+    } else {
+        state->constraint_bound_norm = sqrt(sum_of_squares);
+    }
+
     state->num_blocks_primal =
         (state->num_variables + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     state->num_blocks_dual =
@@ -1129,7 +1156,7 @@ void primal_feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_stat
     {
         if ((state->is_this_major_iteration || state->total_count == 0) || (state->total_count % get_print_frequency(state->total_count) == 0))
         {
-            compute_primal_feas_polish_residual(state, ori_state);
+            compute_primal_feas_polish_residual(state, ori_state, params->optimality_norm);
 
             state->cumulative_time_sec = (double)(clock() - start_time) / CLOCKS_PER_SEC;
 
@@ -1175,7 +1202,7 @@ void dual_feasibility_polish(const pdhg_parameters_t *params, pdhg_solver_state_
     {
         if ((state->is_this_major_iteration || state->total_count == 0) || (state->total_count % get_print_frequency(state->total_count) == 0))
         {
-            compute_dual_feas_polish_residual(state, ori_state);
+            compute_dual_feas_polish_residual(state, ori_state, params->optimality_norm);
 
             state->cumulative_time_sec = (double)(clock() - start_time) / CLOCKS_PER_SEC;
 

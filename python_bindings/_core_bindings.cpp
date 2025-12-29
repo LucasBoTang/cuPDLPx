@@ -137,6 +137,21 @@ static const int32_t *get_index_ptr_i32(py::object obj, const char *name,
     throw std::invalid_argument(std::string(name) + " must be int32 or int64.");
 }
 
+// helper function to convert norm string to enum
+static norm_type_t parse_norm_string(const std::string& s)
+{
+    std::string lower = s;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    
+    if (lower == "l2") {
+        return NORM_TYPE_L2;
+    } else if (lower == "linf") {
+        return NORM_TYPE_L_INF;
+    } else {
+        throw std::invalid_argument("Unknown norm type: " + s + ". Use 'l2' or 'linf'.");
+    }
+}
+
 // ensure 1D array or None with expected length
 static void ensure_len_or_null(py::object obj, const char *name, int expect_len)
 {
@@ -247,6 +262,8 @@ static py::dict get_default_params_py()
     d["feasibility_polishing"] = p.feasibility_polishing;
     d["eps_feas_polish_relative"] = p.termination_criteria.eps_feas_polish_relative;
 
+    // Termination criteria norm
+    d["optimality_norm"] = (p.optimality_norm == NORM_TYPE_L_INF) ? "linf" : "l2";
     // power method for singular value estimation
     d["sv_max_iter"] = p.sv_max_iter;
     d["sv_tol"] = p.sv_tol;
@@ -270,6 +287,19 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
     { if (d.contains(k)) tgt = py::cast<int>(d[k]); };
     auto getb = [&](const char *k, bool &tgt)
     { if (d.contains(k)) tgt = py::cast<bool>(d[k]); };
+    auto get_norm = [&](const char *k, norm_type_t &tgt)
+    { 
+        if (d.contains(k)) {
+            py::object val = d[k];
+            if (py::isinstance<py::str>(val)) {
+                std::string sval = py::cast<std::string>(val);
+                tgt = parse_norm_string(sval);
+            }
+            else {
+                throw std::invalid_argument("optimality_norm must be a string ('l2'/'linf')");
+            }
+        }
+    };
 
     // verbosity
     getb("verbose", p->verbose);
@@ -303,6 +333,8 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
     getb("feasibility_polishing", p->feasibility_polishing);
     getf("eps_feas_polish_relative", p->termination_criteria.eps_feas_polish_relative);
 
+    // Termination criteria norm
+    get_norm("optimality_norm", p->optimality_norm);
     // power method for singular value estimation
     geti("sv_max_iter", p->sv_max_iter);
     getf("sv_tol", p->sv_tol);

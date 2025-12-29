@@ -224,8 +224,8 @@ bool optimality_criteria_met(const pdhg_solver_state_t *state,
                              double rel_opt_tol, double rel_feas_tol)
 {
     return state->relative_dual_residual < rel_feas_tol &&
-           state->relative_primal_residual < rel_feas_tol &&
-           state->relative_objective_gap < rel_opt_tol;
+            state->relative_primal_residual < rel_feas_tol &&
+            state->relative_objective_gap < rel_opt_tol;
 }
 
 bool primal_infeasibility_criteria_met(const pdhg_solver_state_t *state,
@@ -349,6 +349,7 @@ void set_default_parameters(pdhg_parameters_t *params)
     params->restart_params.k_d = 0.0;
     params->restart_params.i_smooth = 0.3;
 
+    params->optimality_norm = NORM_TYPE_L2;
     params->presolve = true;
 }
 
@@ -407,6 +408,10 @@ void print_initial_info(const pdhg_parameters_t *params,
            params->termination_criteria.eps_feasible_relative);
     printf("  eps_infeas_detect  : %.1e\n",
            params->termination_criteria.eps_infeasible);
+    if (params->optimality_norm != default_params.optimality_norm) {
+        printf("  optimality_norm    : %s\n",
+               params->optimality_norm == NORM_TYPE_L_INF ? "L_inf" : "L2");
+    }
 
     PRINT_DIFF_INT("l_inf_ruiz_iter",
                    params->l_inf_ruiz_iterations, 
@@ -680,7 +685,7 @@ static double get_vector_sum(cublasHandle_t handle, int n, double *ones_d,
     return sum;
 }
 
-void compute_residual(pdhg_solver_state_t *state)
+void compute_residual(pdhg_solver_state_t *state, norm_type_t optimality_norm)
 {
     cusparseDnVecSetValues(state->vec_primal_sol, state->pdhg_primal_solution);
     cusparseDnVecSetValues(state->vec_dual_sol, state->pdhg_dual_solution);
@@ -707,13 +712,26 @@ void compute_residual(pdhg_solver_state_t *state)
         state->constraint_upper_bound_finite_val, state->num_constraints,
         state->num_variables);
 
-    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_constraints,
-                                   state->primal_residual, 1,
-                                   &state->absolute_primal_residual));
+    if (optimality_norm == NORM_TYPE_L_INF) {
+        state->absolute_primal_residual = get_vector_inf_norm(state->blas_handle, 
+                                          state->num_constraints, state->primal_residual);
+    } else {
+        CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_constraints, 
+                                       state->primal_residual, 1, 
+                                       &state->absolute_primal_residual));
+    }
+
     state->absolute_primal_residual /= state->constraint_bound_rescaling;
-    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
-                                   state->dual_residual, 1,
-                                   &state->absolute_dual_residual));
+
+    if (optimality_norm == NORM_TYPE_L_INF) {
+        state->absolute_dual_residual = get_vector_inf_norm(state->blas_handle, 
+                                        state->num_variables, state->dual_residual);
+    } else {
+        CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
+                                       state->dual_residual, 1,
+                                       &state->absolute_dual_residual));
+    }
+
     state->absolute_dual_residual /= state->objective_vector_rescaling;
 
     CUBLAS_CHECK(cublasDdot(
@@ -736,12 +754,15 @@ void compute_residual(pdhg_solver_state_t *state)
                                        state->objective_vector_rescaling) +
                                   state->objective_constant;
 
-    state->relative_primal_residual =
+    state->relative_primal_residual = 
         state->absolute_primal_residual / (1.0 + state->constraint_bound_norm);
+    
     state->relative_dual_residual =
         state->absolute_dual_residual / (1.0 + state->objective_vector_norm);
+
     state->objective_gap =
         fabs(state->primal_objective_value - state->dual_objective_value);
+
     state->relative_objective_gap =
         state->objective_gap / (1.0 + fabs(state->primal_objective_value) +
                                 fabs(state->dual_objective_value));
@@ -1218,7 +1239,7 @@ __global__ void compute_dual_feas_polish_residual_kerenl(
     }
 }
 
-void compute_primal_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state)
+void compute_primal_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state, norm_type_t optimality_norm)
 {
     cusparseDnVecSetValues(state->vec_primal_sol, state->pdhg_primal_solution);
     cusparseDnVecSetValues(state->vec_primal_prod, state->primal_product);
@@ -1230,15 +1251,24 @@ void compute_primal_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_
         state->constraint_upper_bound, state->constraint_rescaling,
         state->num_constraints);
 
-    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_constraints, state->primal_residual, 1, &state->absolute_primal_residual));
+    if (optimality_norm == NORM_TYPE_L_INF) {
+        state->absolute_primal_residual = get_vector_inf_norm(state->blas_handle, 
+                                          state->num_constraints, state->primal_residual);
+    } else {
+        CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_constraints, 
+                                       state->primal_residual, 1, 
+                                       &state->absolute_primal_residual));
+    }
+
     state->absolute_primal_residual /= state->constraint_bound_rescaling;
+
     state->relative_primal_residual = state->absolute_primal_residual / (1.0 + state->constraint_bound_norm);
 
     CUBLAS_CHECK(cublasDdot(state->blas_handle, state->num_variables, ori_state->objective_vector, 1, state->pdhg_primal_solution, 1, &state->primal_objective_value));
     state->primal_objective_value = state->primal_objective_value / (state->constraint_bound_rescaling * state->objective_vector_rescaling) + state->objective_constant;
 }
 
-void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state)
+void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state, norm_type_t optimality_norm)
 {
     cusparseDnVecSetValues(state->vec_dual_sol, state->pdhg_dual_solution);
     cusparseDnVecSetValues(state->vec_dual_prod, state->dual_product);
@@ -1256,8 +1286,16 @@ void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_so
         ori_state->constraint_upper_bound_finite_val,
         state->num_variables, state->num_constraints);
 
-    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables, state->dual_residual, 1, &state->absolute_dual_residual));
+    if (optimality_norm == NORM_TYPE_L_INF) {
+        state->absolute_dual_residual = get_vector_inf_norm(state->blas_handle, 
+                                        state->num_variables, state->dual_residual);
+    } else {
+        CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables, 
+                                       state->dual_residual, 1, &state->absolute_dual_residual));
+    }
+
     state->absolute_dual_residual /= state->objective_vector_rescaling;
+
     state->relative_dual_residual = state->absolute_dual_residual / (1.0 + state->objective_vector_norm);
 
     double base_dual_objective;
