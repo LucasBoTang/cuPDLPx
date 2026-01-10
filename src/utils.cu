@@ -325,7 +325,7 @@ void set_default_parameters(pdhg_parameters_t *params)
     params->bound_objective_rescaling = true;
     params->verbose = false;
     params->termination_evaluation_frequency = 200;
-    params->adaptive_scaling_frequency = 10000;
+    params->diag_scaling_trigger_iter = 10000;
     params->feasibility_polishing = false;
     params->reflection_coefficient = 1.0;
 
@@ -424,6 +424,9 @@ void print_initial_info(const pdhg_parameters_t *params,
     PRINT_DIFF_DBL("sv_tol",
                    params->sv_tol, 
                    default_params.sv_tol);
+    PRINT_DIFF_INT("diag_scaling_trigger_iter",
+                   params->diag_scaling_trigger_iter, 
+                   default_params.diag_scaling_trigger_iter);
     PRINT_DIFF_INT("evaluation_freq", 
                    params->termination_evaluation_frequency, 
                    default_params.termination_evaluation_frequency);
@@ -460,7 +463,7 @@ void pdhg_final_log(const pdhg_solver_state_t *state, bool verbose,
     printf("Solution Summary\n");
     printf("  Status                 : %s\n", termination_reason_to_string(reason));
     printf("  Precondition time      : %.5g sec\n", state->rescaling_time_sec);
-    printf("  Diagonal scaling count : %d\n", state->diag_scaling_total_count);
+    printf("  Diagonal scaling used  : %s\n", state->diag_scaling_triggered ? "yes" : "no");
     printf("  Iterations             : %d\n", state->total_count - 1);
     printf("  Solve time             : %.3g sec\n", state->cumulative_time_sec);
     printf("  Primal obj             : %.10g\n", state->primal_objective_value);

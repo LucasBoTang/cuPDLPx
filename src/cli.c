@@ -40,9 +40,10 @@ const char *termination_reason_tToString(termination_reason_t reason)
         return "TIME_LIMIT";
     case TERMINATION_REASON_ITERATION_LIMIT:
         return "ITERATION_LIMIT";
-    case TERMINATION_REASON_UNSPECIFIED:
     case TERMINATION_REASON_FEAS_POLISH_SUCCESS:
         return "FEAS_POLISH_SUCCESS";
+    case TERMINATION_REASON_UNSPECIFIED:
+        return "UNSPECIFIED";
     default:
         return "UNSPECIFIED";
     }
@@ -124,7 +125,7 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
     fprintf(outfile, "Termination Reason: %s\n",
             termination_reason_tToString(result->termination_reason));
     fprintf(outfile, "Precondition Time (sec): %e\n", result->rescaling_time_sec);
-    fprintf(outfile, "Diagonal Scaling Count: %d\n", result->diag_scaling_count);
+    fprintf(outfile, "Diagonal Scaling Triggered: %s\n", result->diag_scaling_triggered ? "true" : "false");
     fprintf(outfile, "Iterations Count: %d\n", result->total_count);
     fprintf(outfile, "Runtime (sec): %e\n", result->cumulative_time_sec);
     fprintf(outfile, "Primal Objective Value: %e\n",
@@ -191,6 +192,8 @@ void print_usage(const char *prog_name)
                     "Max iterations for singular value estimation (default: 5000).\n");
     fprintf(stderr, "      --sv_tol <float>                "
                     "Tolerance for singular value estimation (default: 1e-4).\n");
+    fprintf(stderr, "      --diag_scaling_trigger_iter <int>  "
+                    "Enable diagonal scaling after this many inner iterations (<=0 disables; default: 10000).\n");
     fprintf(stderr, "  -f  --feasibility_polishing         "
                     "Enable feasibility use feasibility polishing (default: false).\n");
     fprintf(stderr, "      --eps_feas_polish <tolerance>   Relative feasibility "
@@ -219,6 +222,7 @@ int main(int argc, char *argv[])
         {"sv_max_iter", required_argument, 0, 1011},
         {"sv_tol", required_argument, 0, 1012},
         {"eval_freq", required_argument, 0, 1013},
+        {"diag_scaling_trigger_iter", required_argument, 0, 1014},
         {0, 0, 0, 0}};
 
     int opt;
@@ -273,6 +277,9 @@ int main(int argc, char *argv[])
             break;
         case 1013: // --eval_freq
             params.termination_evaluation_frequency = atoi(optarg);
+            break;
+        case 1014: // --diag_scaling_trigger_iter
+            params.diag_scaling_trigger_iter = atoi(optarg);
             break;
         case '?': // Unknown option
             return 1;

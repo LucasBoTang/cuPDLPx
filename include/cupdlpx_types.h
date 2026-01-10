@@ -87,10 +87,10 @@ extern "C"
 		int termination_evaluation_frequency;
 		int sv_max_iter;
 		double sv_tol;
+		int diag_scaling_trigger_iter;
 		termination_criteria_t termination_criteria;
 		restart_parameters_t restart_params;
 		double reflection_coefficient;
-		int adaptive_scaling_frequency;
 		bool feasibility_polishing;
 	} pdhg_parameters_t;
 
@@ -106,6 +106,7 @@ extern "C"
 		int diag_scaling_count;
 		double rescaling_time_sec;
 		double cumulative_time_sec;
+		bool diag_scaling_triggered;
 
 		double absolute_primal_residual;
 		double relative_primal_residual;
