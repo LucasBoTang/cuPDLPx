@@ -280,7 +280,6 @@ static pdhg_solver_state_t *initialize_solver_state(
     CUDA_CHECK(cudaGetLastError());
 
     CUDA_CHECK(cudaMalloc(&state->constraint_matrix->transpose_map, nnz * sizeof(int)));
-    state->constraint_matrix_t->transpose_map = NULL;
     build_transpose_map<<<state->num_blocks_nnz, THREADS_PER_BLOCK>>>(
         state->constraint_matrix->row_ind,
         state->constraint_matrix->col_ind,
