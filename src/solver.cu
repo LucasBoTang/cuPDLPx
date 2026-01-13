@@ -29,7 +29,7 @@ limitations under the License.
 #include <time.h>
 
 __global__ void build_row_ind(const int *__restrict__ row_ptr,
-                              int num_rows,
+                              int n,
                               int *__restrict__ row_ind);
 __global__ void build_transpose_map(const int *__restrict__ A_row_ind,
                                     const int *__restrict__ A_col_ind,
@@ -37,6 +37,14 @@ __global__ void build_transpose_map(const int *__restrict__ A_row_ind,
                                     const int *__restrict__ At_col_ind,
                                     int nnz,
                                     int *__restrict__ A_to_At);
+__global__ void constraint_bound_linf_kernel(const double* __restrict__ lb,
+                                             const double* __restrict__ ub,
+                                             int n,
+                                             double* __restrict__ out);
+__global__ void constraint_bound_l2_kernel(const double* __restrict__ lb,
+                                           const double* __restrict__ ub,
+                                           int n,
+                                           double* __restrict__ out);
 __global__ void fill_finite_bounds_kernel(const double *__restrict__ lower_bound,
                                           const double *__restrict__ upper_bound,
                                           double *__restrict__ lower_bound_finite_val,
@@ -415,6 +423,7 @@ static pdhg_solver_state_t *initialize_solver_state(
         state->constraint_lower_bound_finite_val,
         state->constraint_upper_bound_finite_val,
         n_cons);
+    CUDA_CHECK(cudaGetLastError());
 
     fill_finite_bounds_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         state->variable_lower_bound,
@@ -422,6 +431,7 @@ static pdhg_solver_state_t *initialize_solver_state(
         state->variable_lower_bound_finite_val,
         state->variable_upper_bound_finite_val,
         n_vars);
+    CUDA_CHECK(cudaGetLastError());
 
     CUDA_CHECK(cudaFree(state->constraint_matrix->row_ind));
     state->constraint_matrix->row_ind = NULL;
@@ -430,56 +440,64 @@ static pdhg_solver_state_t *initialize_solver_state(
     CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_map));
     state->constraint_matrix->transpose_map = NULL;
 
-    double sum_of_squares = 0.0;
-    double max_val = 0.0;
-    double val = 0.0;
-    for (int i = 0; i < n_vars; ++i)
+    double obj_norm = 0.0;
+    if (params->optimality_norm == NORM_TYPE_L_INF)
     {
-        if (params->optimality_norm == NORM_TYPE_L_INF) {
-            val = fabs(working_problem->objective_vector[i]);
-            if (val > max_val) max_val = val;
-        } else {
-            sum_of_squares += working_problem->objective_vector[i] * working_problem->objective_vector[i];
-        }
-    }
-
-    if (params->optimality_norm == NORM_TYPE_L_INF) {
-        state->objective_vector_norm = max_val;
+        int max_idx = 0;
+        CUBLAS_CHECK(cublasIdamax(state->blas_handle,
+                                  n_vars,
+                                  state->objective_vector, 1,
+                                  &max_idx));
+        double v = 0.0;
+        CUDA_CHECK(cudaMemcpy(&v,
+                              state->objective_vector + (max_idx - 1),
+                              sizeof(double),
+                              cudaMemcpyDeviceToHost));
+        obj_norm = fabs(v);
     } else {
-        state->objective_vector_norm = sqrt(sum_of_squares);
+        CUBLAS_CHECK(cublasDnrm2(state->blas_handle,
+                                 state->num_variables,
+                                 state->objective_vector, 1,
+                                 &obj_norm));
     }
+    state->objective_vector_norm = obj_norm;
 
-    sum_of_squares = 0.0;
-    max_val = 0.0;
-    val = 0.0;
-    for (int i = 0; i < n_cons; ++i)
+    double* constraint_bound_contrib = NULL;
+    CUDA_CHECK(cudaMalloc(&constraint_bound_contrib, n_cons * sizeof(double)));
+    if (params->optimality_norm == NORM_TYPE_L_INF)
     {
-        double lower = working_problem->constraint_lower_bound[i];
-        double upper = working_problem->constraint_upper_bound[i];
-
-        if (params->optimality_norm == NORM_TYPE_L_INF) {
-            if (isfinite(lower) && (lower != upper)) {
-                val = fabs(lower);
-                if (val > max_val) max_val = val;
-            }
-            if (isfinite(upper)) {
-                val = fabs(upper);
-                if (val > max_val) max_val = val;
-            }
-        } else {
-            if (isfinite(lower) && (lower != upper)) {
-                sum_of_squares += lower * lower;
-            }
-            if (isfinite(upper)) {
-                sum_of_squares += upper * upper;
-            }
-        }
-    }
-    if (params->optimality_norm == NORM_TYPE_L_INF) {
-        state->constraint_bound_norm = max_val;
+        constraint_bound_linf_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+            state->constraint_lower_bound,
+            state->constraint_upper_bound,
+            n_cons,
+            constraint_bound_contrib);
+        CUDA_CHECK(cudaGetLastError());
+        int max_idx = 0;
+        CUBLAS_CHECK(cublasIdamax(state->blas_handle,
+                                  n_cons,
+                                  constraint_bound_contrib, 1,
+                                  &max_idx));
+        double v = 0.0;
+        CUDA_CHECK(cudaMemcpy(&v,
+                              constraint_bound_contrib + (max_idx - 1),
+                              sizeof(double),
+                              cudaMemcpyDeviceToHost));
+       state->constraint_bound_norm = fabs(v);
     } else {
-        state->constraint_bound_norm = sqrt(sum_of_squares);
+        constraint_bound_l2_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+            state->constraint_lower_bound,
+            state->constraint_upper_bound,
+            n_cons,
+            constraint_bound_contrib);
+        CUDA_CHECK(cudaGetLastError());
+        double sum_sq = 0.0;
+        CUBLAS_CHECK(cublasDasum(state->blas_handle,
+                                 n_cons,
+                                 constraint_bound_contrib, 1,
+                                 &sum_sq));
+    state->constraint_bound_norm = sqrt(sum_sq);
     }
+    CUDA_CHECK(cudaFree(constraint_bound_contrib));
 
     state->best_primal_dual_residual_gap = INFINITY;
     state->last_trial_fixed_point_error = INFINITY;
@@ -542,11 +560,11 @@ static pdhg_solver_state_t *initialize_solver_state(
 }
 
 __global__ void build_row_ind(const int *__restrict__ row_ptr,
-                              int num_rows,
+                              int n,
                               int *__restrict__ row_ind)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_rows)
+    if (i >= n)
         return;
 
     int s = row_ptr[i];
@@ -590,6 +608,54 @@ __global__ void build_transpose_map(
         return;
 
     A_to_At[k] = pos;
+}
+
+__global__ void constraint_bound_linf_kernel(
+    const double* __restrict__ lb,
+    const double* __restrict__ ub,
+    int n,
+    double* __restrict__ out)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+
+    double lower = lb[i];
+    double upper = ub[i];
+    double v = 0.0;
+
+    if (isfinite(lower) && (lower != upper)) {
+        v = fabs(lower);
+    }
+    if (isfinite(upper)) {
+        double u = fabs(upper);
+        if (u > v) v = u;
+    }
+
+    out[i] = v;
+}
+
+__global__ void constraint_bound_l2_kernel(
+    const double* __restrict__ lb,
+    const double* __restrict__ ub,
+    int n,
+    double* __restrict__ out)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+
+    double lower = lb[i];
+    double upper = ub[i];
+
+    double acc = 0.0;
+
+    if (isfinite(lower) && (lower != upper)) {
+        acc += lower * lower;
+    }
+    if (isfinite(upper)) {
+        acc += upper * upper;
+    }
+
+    out[i] = acc;
 }
 
 __global__ void fill_finite_bounds_kernel(
