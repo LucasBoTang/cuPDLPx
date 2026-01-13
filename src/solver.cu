@@ -165,8 +165,7 @@ cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
                 compute_infeasibility_information(state);
             }
 
-            state->cumulative_time_sec =
-                (double)(clock() - start_time) / CLOCKS_PER_SEC;
+            state->cumulative_time_sec = (double)(clock() - start_time) / CLOCKS_PER_SEC;
 
             check_termination_criteria(state, &params->termination_criteria);
             display_iteration_stats(state, params->verbose);
@@ -270,11 +269,11 @@ static pdhg_solver_state_t *initialize_solver_state(
 
     state->constraint_matrix->num_rows = n_cons;
     state->constraint_matrix->num_cols = n_vars;
-    state->constraint_matrix->num_nonzeros = working_problem->constraint_matrix_num_nonzeros;
+    state->constraint_matrix->num_nonzeros = nnz;
 
     state->constraint_matrix_t->num_rows = n_vars;
     state->constraint_matrix_t->num_cols = n_cons;
-    state->constraint_matrix_t->num_nonzeros = working_problem->constraint_matrix_num_nonzeros;
+    state->constraint_matrix_t->num_nonzeros = nnz;
 
     state->termination_reason = TERMINATION_REASON_UNSPECIFIED;
 
@@ -338,28 +337,7 @@ static pdhg_solver_state_t *initialize_solver_state(
         nnz,
         state->constraint_matrix->transpose_map);
     CUDA_CHECK(cudaGetLastError());
-
-    ALLOC_AND_COPY(state->variable_lower_bound, working_problem->variable_lower_bound, var_bytes);
-    ALLOC_AND_COPY(state->variable_upper_bound, working_problem->variable_upper_bound, var_bytes);
-    ALLOC_AND_COPY(state->objective_vector, working_problem->objective_vector, var_bytes);
-    ALLOC_AND_COPY(state->constraint_lower_bound, working_problem->constraint_lower_bound, con_bytes);
-    ALLOC_AND_COPY(state->constraint_upper_bound, working_problem->constraint_upper_bound, con_bytes);
-
-    double *temp_host = (double *)safe_malloc(fmax(var_bytes, con_bytes));
-    for (int i = 0; i < n_cons; ++i)
-        temp_host[i] = isfinite(working_problem->constraint_lower_bound[i]) ? working_problem->constraint_lower_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->constraint_lower_bound_finite_val, temp_host, con_bytes);
-    for (int i = 0; i < n_cons; ++i)
-        temp_host[i] = isfinite(working_problem->constraint_upper_bound[i]) ? working_problem->constraint_upper_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->constraint_upper_bound_finite_val, temp_host, con_bytes);
-    for (int i = 0; i < n_vars; ++i)
-        temp_host[i] = isfinite(working_problem->variable_lower_bound[i]) ? working_problem->variable_lower_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->variable_lower_bound_finite_val, temp_host, var_bytes);
-    for (int i = 0; i < n_vars; ++i)
-        temp_host[i] = isfinite(working_problem->variable_upper_bound[i]) ? working_problem->variable_upper_bound[i] : 0.0;
-    ALLOC_AND_COPY(state->variable_upper_bound_finite_val, temp_host, var_bytes);
-    free(temp_host);
-
+    
 #define ALLOC_ZERO(dest, bytes)           \
     CUDA_CHECK(cudaMalloc(&dest, bytes)); \
     CUDA_CHECK(cudaMemset(dest, 0, bytes));

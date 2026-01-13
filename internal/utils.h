@@ -138,8 +138,6 @@ extern "C"
     void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state, norm_type_t optimality_norm);
 
     void set_default_parameters(pdhg_parameters_t *params);
-    
-    int* build_row_ind_from_row_ptr(int* row_ptr, int num_rows, int nnz);
 
 #ifdef __cplusplus
 }

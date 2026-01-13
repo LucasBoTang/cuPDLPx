@@ -220,7 +220,7 @@ static void bound_objective_rescaling(
         contrib_d);
 
     double *bnd_norm_sq_d = nullptr;
-    CUDA_CHECK(cudaMalloc(&bnd_norm_sq_d, sizeof(double)));;
+    CUDA_CHECK(cudaMalloc(&bnd_norm_sq_d, sizeof(double)));
     void *temp_storage = nullptr;
     size_t temp_bytes = 0;
     CUDA_CHECK(cub::DeviceReduce::Sum(temp_storage, temp_bytes, contrib_d, bnd_norm_sq_d, num_constraints));

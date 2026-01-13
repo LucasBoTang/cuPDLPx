@@ -728,7 +728,7 @@ void compute_residual(pdhg_solver_state_t *state, norm_type_t optimality_norm)
                                         state->num_variables, state->dual_residual);
     } else {
         state->absolute_primal_residual /= state->constraint_bound_rescaling;
-    CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
+        CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
                                        state->dual_residual, 1,
                                        &state->absolute_dual_residual));
     }
@@ -1214,7 +1214,7 @@ __global__ void compute_primal_feas_polish_residual_kernel(
     }
 }
 
-__global__ void compute_dual_feas_polish_residual_kerenl(
+__global__ void compute_dual_feas_polish_residual_kernel(
     double *dual_residual,
     const double *dual_solution,
     const double *dual_product,
@@ -1242,8 +1242,8 @@ __global__ void compute_dual_feas_polish_residual_kerenl(
 
 void compute_primal_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state, norm_type_t optimality_norm)
 {
-    cusparseDnVecSetValues(state->vec_primal_sol, state->pdhg_primal_solution);
-    cusparseDnVecSetValues(state->vec_primal_prod, state->primal_product);
+    CUSPARSE_CHECK(cusparseDnVecSetValues(state->vec_primal_sol, state->pdhg_primal_solution));
+    CUSPARSE_CHECK(cusparseDnVecSetValues(state->vec_primal_prod, state->primal_product));
 
     CUSPARSE_CHECK(cusparseSpMV(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matA, state->vec_primal_sol, &HOST_ZERO, state->vec_primal_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->primal_spmv_buffer));
 
@@ -1271,12 +1271,12 @@ void compute_primal_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_
 
 void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_solver_state_t *ori_state, norm_type_t optimality_norm)
 {
-    cusparseDnVecSetValues(state->vec_dual_sol, state->pdhg_dual_solution);
-    cusparseDnVecSetValues(state->vec_dual_prod, state->dual_product);
+    CUSPARSE_CHECK(cusparseDnVecSetValues(state->vec_dual_sol, state->pdhg_dual_solution));
+    CUSPARSE_CHECK(cusparseDnVecSetValues(state->vec_dual_prod, state->dual_product));
 
     CUSPARSE_CHECK(cusparseSpMV(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matAt, state->vec_dual_sol, &HOST_ZERO, state->vec_dual_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->dual_spmv_buffer));
 
-    compute_dual_feas_polish_residual_kerenl<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
+    compute_dual_feas_polish_residual_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
         state->dual_residual,
         state->pdhg_dual_solution,
         state->dual_product,
@@ -1304,19 +1304,3 @@ void compute_dual_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_so
     double dual_slack_sum = get_vector_sum(state->blas_handle, state->num_constraints, state->ones_dual_d, state->primal_slack);
     state->dual_objective_value = (base_dual_objective + dual_slack_sum) / (state->constraint_bound_rescaling * state->objective_vector_rescaling) + state->objective_constant;
 }
-
-int* build_row_ind_from_row_ptr(int* row_ptr, int num_rows, int nnz)
-{
-    if (!row_ptr || num_rows < 0 || nnz <= 0) return NULL;
-
-    int* row_ind = (int*)safe_malloc(nnz * sizeof(int));
-    for (int i = 0; i < num_rows; ++i) {
-        int s = row_ptr[i];
-        int e = row_ptr[i + 1];
-        for (int k = s; k < e; ++k) {
-            row_ind[k] = i;
-        }
-    }
-    return row_ind;
-}
-
