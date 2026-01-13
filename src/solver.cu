@@ -425,13 +425,6 @@ static pdhg_solver_state_t *initialize_solver_state(
                           state->initial_dual_solution,
                           con_bytes, cudaMemcpyDeviceToDevice));
 
-    CUDA_CHECK(cudaFree(state->constraint_matrix->row_ind));
-    state->constraint_matrix->row_ind = NULL;
-    CUDA_CHECK(cudaFree(state->constraint_matrix_t->row_ind));
-    state->constraint_matrix_t->row_ind = NULL;
-    CUDA_CHECK(cudaFree(state->constraint_matrix->transpose_map));
-    state->constraint_matrix->transpose_map = NULL;
-
     double sum_of_squares = 0.0;
     double max_val = 0.0;
     double val = 0.0;
