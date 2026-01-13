@@ -337,6 +337,12 @@ static pdhg_solver_state_t *initialize_solver_state(
         nnz,
         state->constraint_matrix->transpose_map);
     CUDA_CHECK(cudaGetLastError());
+
+    ALLOC_AND_COPY(state->variable_lower_bound, working_problem->variable_lower_bound, var_bytes);
+    ALLOC_AND_COPY(state->variable_upper_bound, working_problem->variable_upper_bound, var_bytes);
+    ALLOC_AND_COPY(state->objective_vector, working_problem->objective_vector, var_bytes);
+    ALLOC_AND_COPY(state->constraint_lower_bound, working_problem->constraint_lower_bound, con_bytes);
+    ALLOC_AND_COPY(state->constraint_upper_bound, working_problem->constraint_upper_bound, con_bytes);
     
 #define ALLOC_ZERO(dest, bytes)           \
     CUDA_CHECK(cudaMalloc(&dest, bytes)); \
