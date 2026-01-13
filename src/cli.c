@@ -129,6 +129,7 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
     }
     fprintf(outfile, "Precondition time (sec): %e\n", result->rescaling_time_sec);
     fprintf(outfile, "Runtime (sec): %e\n", result->cumulative_time_sec);
+    fprintf(outfile, "Diagonal Scaling Triggered: %s\n", result->diag_scaling_triggered ? "true" : "false");
     fprintf(outfile, "Iterations Count: %d\n", result->total_count);
     fprintf(outfile, "Primal Objective Value: %e\n",
             result->primal_objective_value);
@@ -206,6 +207,8 @@ void print_usage(const char *prog_name)
                     "Norm for optimality criteria: l2 or linf (default: l2).\n");
     fprintf(stderr, "      --no_presolve                   "
                     "Disable presolve (default: enabled).\n");
+    fprintf(stderr, "      --diag_scaling_trigger_iter <int>  "
+                    "Enable diagonal scaling after this many inner iterations (<=0 disables; default: 10000).\n");
 }
 
 int main(int argc, char *argv[])
@@ -232,6 +235,7 @@ int main(int argc, char *argv[])
         {"eval_freq", required_argument, 0, 1013},
         {"opt_norm", required_argument, 0, 1014},
         {"no_presolve", no_argument, 0, 1015},
+        {"diag_scaling_trigger_iter", required_argument, 0, 1016},
         {0, 0, 0, 0}};
 
     int opt;
@@ -302,6 +306,9 @@ int main(int argc, char *argv[])
             break;
         case 1015: // --no_presolve
             params.presolve = false;
+            break;
+        case 1016: // --diag_scaling_trigger_iter
+            params.diag_scaling_trigger_iter = atoi(optarg);
             break;
         case '?': // Unknown option
             return 1;

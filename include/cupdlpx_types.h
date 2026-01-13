@@ -95,6 +95,7 @@ extern "C"
 		int termination_evaluation_frequency;
 		int sv_max_iter;
 		double sv_tol;
+		int diag_scaling_trigger_iter;
 		termination_criteria_t termination_criteria;
 		restart_parameters_t restart_params;
 		double reflection_coefficient;
@@ -120,6 +121,7 @@ extern "C"
 		int total_count;
 		double rescaling_time_sec;
 		double cumulative_time_sec;
+		bool diag_scaling_triggered;
 		double presolve_time;
 		int presolve_status;
 		// PresolveStats presolve_stats;
