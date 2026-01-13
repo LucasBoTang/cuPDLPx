@@ -385,6 +385,19 @@ static pdhg_solver_state_t *initialize_solver_state(
     rescale_info->var_rescale = NULL;
     rescale_info_free(rescale_info);
 
+    CUDA_CHECK(cudaMemcpy(state->current_primal_solution,
+                          state->initial_primal_solution,
+                          var_bytes, cudaMemcpyDeviceToDevice));
+    CUDA_CHECK(cudaMemcpy(state->current_dual_solution,
+                          state->initial_dual_solution,
+                          con_bytes, cudaMemcpyDeviceToDevice));
+    CUDA_CHECK(cudaMemcpy(state->pdhg_primal_solution,
+                          state->initial_primal_solution,
+                          var_bytes, cudaMemcpyDeviceToDevice));
+    CUDA_CHECK(cudaMemcpy(state->pdhg_dual_solution,
+                          state->initial_dual_solution,
+                          con_bytes, cudaMemcpyDeviceToDevice));
+
     CUDA_CHECK(cudaMalloc(&state->constraint_lower_bound_finite_val, con_bytes));
     CUDA_CHECK(cudaMalloc(&state->constraint_upper_bound_finite_val, con_bytes));
     CUDA_CHECK(cudaMalloc(&state->variable_lower_bound_finite_val, var_bytes));
