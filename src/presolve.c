@@ -136,10 +136,26 @@ cupdlpx_result_t *create_result_from_presolve(const cupdlpx_presolve_info_t *inf
     if (info->presolve_status == INFEASIBLE)
     {
         result->termination_reason = TERMINATION_REASON_PRIMAL_INFEASIBLE;
+        result->absolute_primal_residual = INFINITY;
+        result->relative_primal_residual = INFINITY;
+        result->absolute_dual_residual = INFINITY;
+        result->relative_dual_residual = INFINITY;
+        result->primal_objective_value = INFINITY;
+        result->dual_objective_value = -INFINITY;
+        result->objective_gap = INFINITY;
+        result->relative_objective_gap = INFINITY;
     }
     else if (info->presolve_status == UNBNDORINFEAS)
     {
         result->termination_reason = TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED;
+        result->absolute_primal_residual = INFINITY;
+        result->relative_primal_residual = INFINITY;
+        result->absolute_dual_residual = INFINITY;
+        result->relative_dual_residual = INFINITY;
+        result->primal_objective_value = INFINITY;
+        result->dual_objective_value = -INFINITY;
+        result->objective_gap = INFINITY;
+        result->relative_objective_gap = INFINITY;
     }
     else if (info->presolver->reduced_prob->n == 0)
     {
