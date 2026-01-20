@@ -63,3 +63,7 @@ test/*
 /_b
 *.whl
 *.pyc
+
+
+*.txt
+*.sh

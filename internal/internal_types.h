@@ -28,7 +28,9 @@ typedef struct
 	int num_nonzeros;
 	int *row_ptr;
 	int *col_ind;
+	int *row_ind;
 	double *val;
+	int *transpose_map;
 } cu_sparse_matrix_csr_t;
 
 typedef struct
@@ -46,6 +48,7 @@ typedef struct
 	int num_blocks_primal;
 	int num_blocks_dual;
 	int num_blocks_primal_dual;
+	int num_blocks_nnz;
 	double objective_vector_norm;
 	double constraint_bound_norm;
 	double *constraint_lower_bound_finite_val;
@@ -129,7 +132,6 @@ typedef struct
 
 typedef struct
 {
-	lp_problem_t *scaled_problem;
 	double *con_rescale;
 	double *var_rescale;
 	double con_bound_rescale;
