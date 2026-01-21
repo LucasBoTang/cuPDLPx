@@ -13,6 +13,17 @@ set(CUPDLPX_VERSION_PATCH 4)
 set(CUPDLPX_VERSION "${CUPDLPX_VERSION_MAJOR}.${CUPDLPX_VERSION_MINOR}.${CUPDLPX_VERSION_PATCH}")
 add_compile_definitions(CUPDLPX_VERSION="${CUPDLPX_VERSION}")
 
+# fail early on Windows
+if (WIN32)
+  message(FATAL_ERROR
+    "cuPDLPx ${CUPDLPX_VERSION} is not supported on Windows.\n"
+    "Reason: dependency 'PSLP' relies on POSIX APIs/headers and does not build with MSVC/Windows.\n"
+    "Workarounds:\n"
+    "  - Use Linux (recommended) or WSL2.\n"
+    "  - If you must use native Windows, install an older release that worked for you (e.g., pip install cupdlpx==0.1.2).\n"
+  )
+endif()
+
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 # C/C++ standards
