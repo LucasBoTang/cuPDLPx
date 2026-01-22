@@ -23,7 +23,7 @@ limitations under the License.
 #include <cublas_v2.h>
 #include <cub/cub.cuh>
 
-#define SCALING_EPSILON 1e-12
+#define SCALING_EPSILON 1e-8
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
