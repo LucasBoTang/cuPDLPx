@@ -634,8 +634,7 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
         acc += a * (numer / denom);
     }
 
-    double acc_sqrt = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
-    constraint_rescaling[i] = 1.0 / acc_sqrt;
+    constraint_rescaling[i] = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
 }
 
 __global__ void compute_diagonal_variable_rescaling_kernel(
@@ -665,8 +664,7 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
         acc += a * (numer / denom);
     }
 
-    double acc_sqrt = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
-    variable_rescaling[j] = 1.0 / acc_sqrt;
+    variable_rescaling[j] = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
 }
 
 __global__ void accum_rescaling_kernel(double *cumulative,
