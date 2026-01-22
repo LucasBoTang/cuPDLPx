@@ -24,6 +24,8 @@ limitations under the License.
 #include <cub/cub.cuh>
 
 #define SCALING_EPSILON 1e-8
+#define DIAG_SCALE_MIN 1e-1
+#define DIAG_SCALE_MAX 1e1
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
@@ -92,7 +94,8 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ constraint_rescaling,
-    int num_constraints);
+    int num_constraints,
+    double tau_y);
 __global__ void compute_diagonal_variable_rescaling_kernel(
     const int *__restrict__ row_ptr_t,
     const int *__restrict__ col_ind_t,
@@ -100,7 +103,8 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ variable_rescaling,
-    int num_variables);
+    int num_variables,
+    double tau_x);
 __global__ void accum_rescaling_kernel(double *cumulative,
                                        const double *step_scale,
                                        int n);
@@ -362,8 +366,18 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
     CUDA_CHECK(cudaMalloc(&diag_variable_rescaling, num_variables * sizeof(double)));
     CUDA_CHECK(cudaMalloc(&diag_constraint_rescaling, num_constraints * sizeof(double)));
 
-    print_stats("delta_primal", state->delta_primal_solution, num_variables, state->blas_handle);
-    print_stats("delta_dual", state->delta_dual_solution, num_constraints, state->blas_handle);
+    //print_stats("delta_primal", state->delta_primal_solution, num_variables, state->blas_handle);
+    //print_stats("delta_dual", state->delta_dual_solution, num_constraints, state->blas_handle);
+
+    double l2_dx, l2_dy;
+    cublasDnrm2_v2_64(state->blas_handle, num_variables, state->delta_primal_solution, 1, &l2_dx);
+    cublasDnrm2_v2_64(state->blas_handle, num_constraints, state->delta_dual_solution, 1, &l2_dy);
+
+    double rms_dx = l2_dx / sqrt((double)num_variables);
+    double rms_dy = l2_dy / sqrt((double)num_constraints);
+
+    double tau_x = fmax(SCALING_EPSILON, 1e-2 * rms_dx);
+    double tau_y = fmax(SCALING_EPSILON, 1e-2 * rms_dy);
 
     compute_diagonal_variable_rescaling_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         state->constraint_matrix_t->row_ptr,
@@ -372,7 +386,8 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
         state->delta_primal_solution,
         state->delta_dual_solution,
         diag_variable_rescaling,
-        num_variables);
+        num_variables,
+        tau_x);
 
     compute_diagonal_constraint_rescaling_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_matrix->row_ptr,
@@ -381,10 +396,11 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
         state->delta_primal_solution,
         state->delta_dual_solution,
         diag_constraint_rescaling,
-        num_constraints);
+        num_constraints,
+        tau_y);
 
-    print_stats("var_rescale", diag_variable_rescaling, num_variables, state->blas_handle);
-    print_stats("con_rescale", diag_constraint_rescaling, num_constraints, state->blas_handle);
+    //print_stats("var_rescale", diag_variable_rescaling, num_variables, state->blas_handle);
+    //print_stats("con_rescale", diag_constraint_rescaling, num_constraints, state->blas_handle);
 
     scale_problem(state, diag_constraint_rescaling, diag_variable_rescaling);
 
@@ -621,13 +637,19 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ constraint_rescaling,
-    int num_constraints)
+    int num_constraints,
+    double tau_y)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_constraints)
         return;
 
-    double denom = fmax(fabs(delta_dual_solution[i]), SCALING_EPSILON);
+    double denom = fabs(delta_dual_solution[i]);
+
+    if (denom <= tau_y) {
+        constraint_rescaling[i] = 1.0;
+        return;
+    }
 
     int s = row_ptr[i];
     int e = row_ptr[i + 1];
@@ -637,11 +659,11 @@ __global__ void compute_diagonal_constraint_rescaling_kernel(
     {
         int j = col_ind[k];
         double a = fabs(matrix_vals[k]);
-        double numer = fmax(fabs(delta_primal_solution[j]), SCALING_EPSILON);
+        double numer = fabs(delta_primal_solution[j]);
         acc += a * (numer / denom);
     }
 
-    constraint_rescaling[i] = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
+    constraint_rescaling[i] = fmin(fmax(sqrt(acc), DIAG_SCALE_MIN), DIAG_SCALE_MAX);
 }
 
 __global__ void compute_diagonal_variable_rescaling_kernel(
@@ -651,13 +673,19 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
     const double *__restrict__ delta_primal_solution,
     const double *__restrict__ delta_dual_solution,
     double *__restrict__ variable_rescaling,
-    int num_variables)
+    int num_variables,
+    double tau_x)
 {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     if (j >= num_variables)
         return;
 
-    double denom = fmax(fabs(delta_primal_solution[j]), SCALING_EPSILON);
+    double denom = fabs(delta_primal_solution[j]);
+
+    if (denom <= tau_x) {
+        variable_rescaling[j] = 1.0;
+        return;
+    }
 
     int s = row_ptr_t[j];
     int e = row_ptr_t[j + 1];
@@ -667,11 +695,11 @@ __global__ void compute_diagonal_variable_rescaling_kernel(
     {
         int i = col_ind_t[k];
         double a = fabs(matrix_vals_t[k]);
-        double numer = fmax(fabs(delta_dual_solution[i]), SCALING_EPSILON);
+        double numer = fabs(delta_dual_solution[i]);
         acc += a * (numer / denom);
     }
 
-    variable_rescaling[j] = (acc < SCALING_EPSILON) ? 1.0 : sqrt(acc);
+    variable_rescaling[j] = fmin(fmax(sqrt(acc), DIAG_SCALE_MIN), DIAG_SCALE_MAX);
 }
 
 __global__ void accum_rescaling_kernel(double *cumulative,
@@ -751,7 +779,6 @@ static void print_stats(const char* name, const double* d_x, int n, cublasHandle
     CUDA_CHECK(cudaMemcpy(&h_min, d_min, sizeof(double), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(&h_max, d_max, sizeof(double), cudaMemcpyDeviceToHost));
 
-    // --- L2 via cuBLAS
     double l2 = 0.0;
     CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, 1, &l2));
     double rms = l2 / sqrt((double)n);
