@@ -13,7 +13,6 @@ set(CUPDLPX_VERSION_PATCH 4)
 set(CUPDLPX_VERSION "${CUPDLPX_VERSION_MAJOR}.${CUPDLPX_VERSION_MINOR}.${CUPDLPX_VERSION_PATCH}")
 add_compile_definitions(CUPDLPX_VERSION="${CUPDLPX_VERSION}")
 
-# fail early on Windows
 if (WIN32)
   message(FATAL_ERROR
     "cuPDLPx ${CUPDLPX_VERSION} is not supported on Windows.\n"
@@ -44,7 +43,10 @@ else()
 endif()
 
 # Global Compile flags (corresponding to CFLAGS/NVCCFLAGS)
-add_compile_options(-fPIC -O3 -Wall -Wextra -g)
+add_compile_options(-O3 -Wall -Wextra -g)
+if (NOT WIN32)
+  add_compile_options(-fPIC)
+endif()
 
 # Windows compatibility
 if (WIN32)
@@ -78,15 +80,44 @@ cmake_dependent_option(CUPDLPX_BUILD_TESTS "Build the cuPDLPx test suite" OFF
 # -----------------------------------------------------------------------------
 # Core dependencies (required for Julia/Yggdrasil and Python)
 find_package(CUDAToolkit REQUIRED)
-find_package(ZLIB REQUIRED)
+
+include(FetchContent)
+# 1. Try to find ZLIB in the system first (Standard for Linux/Mac)
+find_package(ZLIB QUIET)
+
+if(ZLIB_FOUND)
+    message(STATUS "Found System ZLIB: ${ZLIB_LIBRARIES}")
+else()
+    # 2. If not found (Common on Windows), fetch from source
+    message(STATUS "ZLIB not found in system. Fetching from source...")
+
+    FetchContent_Declare(
+        zlib
+        GIT_REPOSITORY https://github.com/madler/zlib.git
+        GIT_TAG        v1.3
+    )
+    FetchContent_MakeAvailable(zlib)
+
+    # 3. Create alias ZLIB::ZLIB to match your CORE_LINK_LIBS usage
+    if(NOT TARGET ZLIB::ZLIB)
+        if(TARGET zlibstatic)
+            # Prefer zlibstatic to ensure static linking (avoids DLL issues on Windows)
+            add_library(ZLIB::ZLIB ALIAS zlibstatic)
+            # Expose include directories so zlib.h can be found
+            target_include_directories(zlibstatic INTERFACE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+        else()
+            # Fallback if the target is simply named 'zlib'
+            add_library(ZLIB::ZLIB ALIAS zlib)
+            target_include_directories(zlib INTERFACE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+        endif()
+    endif()
+endif()
 
 if (CUPDLPX_BUILD_PYTHON)
     # Dependencies required only for Python bindings
     find_package(pybind11 CONFIG REQUIRED)
     find_package(Python3 COMPONENTS Interpreter REQUIRED) # For versioning script and pybind11
 endif()
-
-include(FetchContent)
 
 set(PSLP_VERSION_TAG "v0.0.4")
 
