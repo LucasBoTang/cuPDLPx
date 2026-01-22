@@ -127,6 +127,7 @@ static void ruiz_rescaling(pdhg_solver_state_t *state, int num_iters, rescale_in
 static void pock_chambolle_rescaling(pdhg_solver_state_t *state, const double alpha, rescale_info_t *rescale_info,
                                      double *constraint_rescaling, double *variable_rescaling);
 static void bound_objective_rescaling(pdhg_solver_state_t *state, rescale_info_t *rescale_info);
+static void print_stats(const char* name, const double* d_x, int n, cublasHandle_t handle);
 
 static void scale_problem(
     pdhg_solver_state_t *state,
@@ -361,6 +362,9 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
     CUDA_CHECK(cudaMalloc(&diag_variable_rescaling, num_variables * sizeof(double)));
     CUDA_CHECK(cudaMalloc(&diag_constraint_rescaling, num_constraints * sizeof(double)));
 
+    print_stats("delta_primal", state->delta_primal_solution, num_variables, state->blas_handle);
+    print_stats("delta_dual", state->delta_dual_solution, num_constraints, state->blas_handle);
+
     compute_diagonal_variable_rescaling_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         state->constraint_matrix_t->row_ptr,
         state->constraint_matrix_t->col_ind,
@@ -378,6 +382,9 @@ void apply_diagonal_scaling(pdhg_solver_state_t *state)
         state->delta_dual_solution,
         diag_constraint_rescaling,
         num_constraints);
+
+    print_stats("var_rescale", diag_variable_rescaling, num_variables, state->blas_handle);
+    print_stats("con_rescale", diag_constraint_rescaling, num_constraints, state->blas_handle);
 
     scale_problem(state, diag_constraint_rescaling, diag_variable_rescaling);
 
@@ -721,4 +728,41 @@ __global__ void compute_inverse_array(const double *__restrict__ in,
         return;
     double v = in[t];
     out[t] = 1.0 / v;
+}
+
+static void print_stats(const char* name, const double* d_x, int n, cublasHandle_t handle)
+{
+    double *d_min = nullptr, *d_max = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_min, sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&d_max, sizeof(double)));
+
+    void *tmp = nullptr;
+    size_t bytes_min = 0, bytes_max = 0;
+    CUDA_CHECK(cub::DeviceReduce::Min(nullptr, bytes_min, d_x, d_min, n));
+    CUDA_CHECK(cub::DeviceReduce::Max(nullptr, bytes_max, d_x, d_max, n));
+
+    size_t bytes = std::max(bytes_min, bytes_max);
+    CUDA_CHECK(cudaMalloc(&tmp, bytes));
+
+    CUDA_CHECK(cub::DeviceReduce::Min(tmp, bytes, d_x, d_min, n));
+    CUDA_CHECK(cub::DeviceReduce::Max(tmp, bytes, d_x, d_max, n));
+
+    double h_min = 0.0, h_max = 0.0;
+    CUDA_CHECK(cudaMemcpy(&h_min, d_min, sizeof(double), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_max, d_max, sizeof(double), cudaMemcpyDeviceToHost));
+
+    // --- L2 via cuBLAS
+    double l2 = 0.0;
+    CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, 1, &l2));
+    double rms = l2 / sqrt((double)n);
+
+    double denom = fmax(fabs(h_min), 1e-300);
+    double ratio = h_max / denom;
+
+    printf("%s: min=%.3e max=%.3e ratio=%.3e | L2=%.3e RMS=%.3e (n=%d)\n",
+           name, h_min, h_max, ratio, l2, rms, n);
+
+    CUDA_CHECK(cudaFree(tmp));
+    CUDA_CHECK(cudaFree(d_min));
+    CUDA_CHECK(cudaFree(d_max));
 }
