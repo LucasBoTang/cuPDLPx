@@ -331,6 +331,7 @@ void set_default_parameters(pdhg_parameters_t *params)
     params->feasibility_polishing = false;
     params->reflection_coefficient = 1.0;
 
+    params->diag_scaling_trigger_iter = 10000;
     params->sv_max_iter = 5000;
     params->sv_tol = 1e-4;
 
