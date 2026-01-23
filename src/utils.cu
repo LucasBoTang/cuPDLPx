@@ -334,6 +334,8 @@ void set_default_parameters(pdhg_parameters_t *params)
     params->sv_max_iter = 5000;
     params->sv_tol = 1e-4;
 
+    params->diag_scaling_trigger_iter = 10000;
+
     params->termination_criteria.eps_optimal_relative = 1e-4;
     params->termination_criteria.eps_feasible_relative = 1e-4;
     params->termination_criteria.eps_infeasible = 1e-10;
@@ -431,6 +433,9 @@ void print_initial_info(const pdhg_parameters_t *params,
     PRINT_DIFF_DBL("sv_tol",
                    params->sv_tol, 
                    default_params.sv_tol);
+    PRINT_DIFF_INT("diag_scaling_trigger_iter",
+                   params->diag_scaling_trigger_iter, 
+                   default_params.diag_scaling_trigger_iter);
     PRINT_DIFF_INT("evaluation_freq", 
                    params->termination_evaluation_frequency, 
                    default_params.termination_evaluation_frequency);
@@ -464,6 +469,7 @@ void pdhg_final_log(
     printf("  Precondition time      : %.5g sec\n", result->rescaling_time_sec);
     printf("  Solve time             : %.3g sec\n", result->cumulative_time_sec);
     printf("  Iterations             : %d\n", result->total_count);
+    printf("  Diagonal scaling used  : %s\n", result->diag_scaling_triggered ? "yes" : "no");
     printf("  Primal objective       : %.10g\n", result->primal_objective_value);
     printf("  Dual objective         : %.10g\n", result->dual_objective_value);
     printf("  Objective gap          : %.3e\n", result->relative_objective_gap);

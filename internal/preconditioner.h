@@ -27,6 +27,8 @@ extern "C"
         const pdhg_parameters_t *params,
         pdhg_solver_state_t *state);
 
+    void apply_diagonal_scaling(pdhg_solver_state_t *state);
+
 #ifdef __cplusplus
 }
 #endif
