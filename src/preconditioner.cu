@@ -23,28 +23,32 @@ limitations under the License.
 #include <cublas_v2.h>
 #include <cub/device/device_reduce.cuh>
 
-#define SCALING_EPSILON 1e-12
+#define SCALING_EPSILON 1e-8
+#define DIAG_SCALE_MIN 1e-1
+#define DIAG_SCALE_MAX 1e1
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
                                        double *__restrict__ variable_upper_bound,
+                                       double *__restrict__ variable_lower_bound_finite_val,
+                                       double *__restrict__ variable_upper_bound_finite_val,
                                        double *__restrict__ initial_primal_solution,
                                        const double *__restrict__ variable_rescaling,
-                                       const double *__restrict__ inverse_variable_rescaling,
                                        int num_variables);
 __global__ void scale_constraints_kernel(double *__restrict__ constraint_lower_bound,
                                          double *__restrict__ constraint_upper_bound,
+                                         double *__restrict__ constraint_lower_bound_finite_val,
+                                         double *__restrict__ constraint_upper_bound_finite_val,
                                          double *__restrict__ initial_dual_solution,
                                          const double *__restrict__ constraint_rescaling,
-                                         const double *__restrict__ inverse_constraint_rescaling,
                                          int num_constraints);
 __global__ void scale_csr_nnz_kernel(const int *__restrict__ constraint_row_ind,
                                      const int *__restrict__ constraint_col_ind,
                                      double *__restrict__ constraint_matrix_val,
                                      double *__restrict__ constraint_matrix_transpose_val,
                                      const int *__restrict__ constraint_to_transpose_position,
-                                     const double *__restrict__ inverse_variable_rescaling,
-                                     const double *__restrict__ inverse_constraint_rescaling,
+                                     const double *__restrict__ variable_rescaling,
+                                     const double *__restrict__ constraint_rescaling,
                                      int nnz);
 __global__ void compute_csr_row_absmax_kernel(const int *__restrict__ row_ptr,
                                               const double *__restrict__ matrix_vals,
@@ -56,7 +60,6 @@ __global__ void compute_csr_row_powsum_kernel(const int *__restrict__ row_ptr,
                                               double degree,
                                               double *__restrict__ row_powsum_values);
 __global__ void clamp_sqrt_and_accum_kernel(double *__restrict__ scaling_factors,
-                                            double *__restrict__ inverse_scaling_factors,
                                             double *__restrict__ cumulative_rescaling,
                                             int num_variables);
 __global__ void compute_bound_contrib_kernel(
@@ -67,6 +70,8 @@ __global__ void compute_bound_contrib_kernel(
 __global__ void scale_bounds_kernel(
     double *__restrict__ constraint_lower_bound,
     double *__restrict__ constraint_upper_bound,
+    double *__restrict__ constraint_lower_bound_finite_val,
+    double *__restrict__ constraint_upper_bound_finite_val,
     double *__restrict__ initial_dual_solution,
     int num_constraints,
     double constraint_scale,
@@ -75,24 +80,63 @@ __global__ void scale_objective_kernel(
     double *__restrict__ objective_vector,
     double *__restrict__ variable_lower_bound,
     double *__restrict__ variable_upper_bound,
+    double *__restrict__ variable_lower_bound_finite_val,
+    double *__restrict__ variable_upper_bound_finite_val,
     double *__restrict__ initial_primal_solution,
     int num_variables,
     double constraint_scale,
     double objective_scale);
 __global__ void fill_ones_kernel(double *__restrict__ x, int num_variables);
-static void scale_problem(pdhg_solver_state_t *state, double *constraint_rescaling, double *variable_rescaling, double *inverse_constraint_rescaling, double *inverse_variable_rescaling);
+__global__ void compute_diagonal_constraint_rescaling_kernel(
+    const int *__restrict__ row_ptr,
+    const int *__restrict__ col_ind,
+    const double *__restrict__ matrix_vals,
+    const double *__restrict__ delta_primal_solution,
+    const double *__restrict__ delta_dual_solution,
+    double *__restrict__ constraint_rescaling,
+    int num_constraints,
+    double tau_y);
+__global__ void compute_diagonal_variable_rescaling_kernel(
+    const int *__restrict__ row_ptr_t,
+    const int *__restrict__ col_ind_t,
+    const double *__restrict__ matrix_vals_t,
+    const double *__restrict__ delta_primal_solution,
+    const double *__restrict__ delta_dual_solution,
+    double *__restrict__ variable_rescaling,
+    int num_variables,
+    double tau_x);
+__global__ void accum_rescaling_kernel(double *cumulative,
+                                       const double *step_scale,
+                                       int n);
+__global__ void scale_primal_solution_state_kernel(
+    double *__restrict__ current_primal_solution,
+    double *__restrict__ pdhg_primal_solution,
+    double *__restrict__ reflected_primal_solution,
+    double *__restrict__ delta_primal_solution,
+    const double *__restrict__ variable_rescaling,
+    int num_variables);
+__global__ void scale_dual_solution_state_kernel(
+    double *__restrict__ current_dual_solution,
+    double *__restrict__ pdhg_dual_solution,
+    double *__restrict__ reflected_dual_solution,
+    double *__restrict__ delta_dual_solution,
+    const double *__restrict__ constraint_rescaling,
+    int num_constraints);
+__global__ void compute_inverse_array(const double *__restrict__ in,
+                                      double *__restrict__ out,
+                                      int n);
+static void scale_problem(pdhg_solver_state_t *state, double *constraint_rescaling, double *variable_rescaling);
 static void ruiz_rescaling(pdhg_solver_state_t *state, int num_iters, rescale_info_t *rescale_info,
-                           double *constraint_rescaling, double *variable_rescaling, double *inverse_constraint_rescaling, double *inverse_variable_rescaling);
+                           double *constraint_rescaling, double *variable_rescaling);
 static void pock_chambolle_rescaling(pdhg_solver_state_t *state, const double alpha, rescale_info_t *rescale_info,
-                                     double *constraint_rescaling, double *variable_rescaling, double *inverse_constraint_rescaling, double *inverse_variable_rescaling);
+                                     double *constraint_rescaling, double *variable_rescaling);
 static void bound_objective_rescaling(pdhg_solver_state_t *state, rescale_info_t *rescale_info);
+static void print_stats(const char* name, const double* d_x, int n, cublasHandle_t handle);
 
 static void scale_problem(
     pdhg_solver_state_t *state,
     double *constraint_rescaling,
-    double *variable_rescaling,
-    double *inverse_constraint_rescaling,
-    double *inverse_variable_rescaling)
+    double *variable_rescaling)
 {
     int num_variables = state->num_variables;
     int num_constraints = state->num_constraints;
@@ -101,17 +145,19 @@ static void scale_problem(
         state->objective_vector,
         state->variable_lower_bound,
         state->variable_upper_bound,
+        state->variable_lower_bound_finite_val,
+        state->variable_upper_bound_finite_val,
         state->initial_primal_solution,
         variable_rescaling,
-        inverse_variable_rescaling,
         num_variables);
 
     scale_constraints_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_lower_bound,
         state->constraint_upper_bound,
+        state->constraint_lower_bound_finite_val,
+        state->constraint_upper_bound_finite_val,
         state->initial_dual_solution,
         constraint_rescaling,
-        inverse_constraint_rescaling,
         num_constraints);
 
     scale_csr_nnz_kernel<<<state->num_blocks_nnz, THREADS_PER_BLOCK>>>(
@@ -120,8 +166,8 @@ static void scale_problem(
         state->constraint_matrix->val,
         state->constraint_matrix_t->val,
         state->constraint_matrix->transpose_map,
-        inverse_variable_rescaling,
-        inverse_constraint_rescaling,
+        variable_rescaling,
+        constraint_rescaling,
         state->constraint_matrix->num_nonzeros);
 }
 
@@ -130,9 +176,7 @@ static void ruiz_rescaling(
     int num_iterations,
     rescale_info_t *rescale_info,
     double *constraint_rescaling,
-    double *variable_rescaling,
-    double *inverse_constraint_rescaling,
-    double *inverse_variable_rescaling)
+    double *variable_rescaling)
 {
     const int num_constraints = state->num_constraints;
     const int num_variables = state->num_variables;
@@ -146,7 +190,6 @@ static void ruiz_rescaling(
             constraint_rescaling);
         clamp_sqrt_and_accum_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
             constraint_rescaling,
-            inverse_constraint_rescaling,
             rescale_info->con_rescale,
             num_constraints);
 
@@ -157,11 +200,10 @@ static void ruiz_rescaling(
             variable_rescaling);
         clamp_sqrt_and_accum_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
             variable_rescaling,
-            inverse_variable_rescaling,
             rescale_info->var_rescale,
             num_variables);
 
-        scale_problem(state, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
+        scale_problem(state, constraint_rescaling, variable_rescaling);
     }
 }
 
@@ -170,9 +212,7 @@ static void pock_chambolle_rescaling(
     const double alpha,
     rescale_info_t *rescale_info,
     double *constraint_rescaling,
-    double *variable_rescaling,
-    double *inverse_constraint_rescaling,
-    double *inverse_variable_rescaling)
+    double *variable_rescaling)
 {
     const int num_constraints = state->num_constraints;
     const int num_variables = state->num_variables;
@@ -185,7 +225,6 @@ static void pock_chambolle_rescaling(
         constraint_rescaling);
     clamp_sqrt_and_accum_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         constraint_rescaling,
-        inverse_constraint_rescaling,
         rescale_info->con_rescale,
         num_constraints);
 
@@ -197,11 +236,10 @@ static void pock_chambolle_rescaling(
         variable_rescaling);
     clamp_sqrt_and_accum_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         variable_rescaling,
-        inverse_variable_rescaling,
         rescale_info->var_rescale,
         num_variables);
 
-    scale_problem(state, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
+    scale_problem(state, constraint_rescaling, variable_rescaling);
 }
 
 static void bound_objective_rescaling(
@@ -221,6 +259,7 @@ static void bound_objective_rescaling(
 
     double *bnd_norm_sq_d = nullptr;
     CUDA_CHECK(cudaMalloc(&bnd_norm_sq_d, sizeof(double)));
+    ;
     void *temp_storage = nullptr;
     size_t temp_bytes = 0;
     CUDA_CHECK(cub::DeviceReduce::Sum(temp_storage, temp_bytes, contrib_d, bnd_norm_sq_d, num_constraints));
@@ -246,6 +285,8 @@ static void bound_objective_rescaling(
     scale_bounds_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
         state->constraint_lower_bound,
         state->constraint_upper_bound,
+        state->constraint_lower_bound_finite_val,
+        state->constraint_upper_bound_finite_val,
         state->initial_dual_solution,
         num_constraints,
         constraint_scale,
@@ -255,6 +296,8 @@ static void bound_objective_rescaling(
         state->objective_vector,
         state->variable_lower_bound,
         state->variable_upper_bound,
+        state->variable_lower_bound_finite_val,
+        state->variable_upper_bound_finite_val,
         state->initial_primal_solution,
         num_variables,
         constraint_scale,
@@ -284,25 +327,23 @@ rescale_info_t *rescale_problem(
     fill_ones_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
         rescale_info->var_rescale, num_variables);
 
-    double *constraint_rescaling = NULL, *variable_rescaling = NULL, *inverse_constraint_rescaling = NULL, *inverse_variable_rescaling = NULL;
+    double *constraint_rescaling = NULL, *variable_rescaling = NULL;
     CUDA_CHECK(cudaMalloc(&constraint_rescaling, num_constraints * sizeof(double)));
     CUDA_CHECK(cudaMalloc(&variable_rescaling, num_variables * sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&inverse_constraint_rescaling, num_constraints * sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&inverse_variable_rescaling, num_variables * sizeof(double)));
 
     if (params->l_inf_ruiz_iterations > 0)
     {
         if (params->verbose) {
             printf("[Precondition] Ruiz scaling (%d iterations)\n", params->l_inf_ruiz_iterations);
         }
-        ruiz_rescaling(state, params->l_inf_ruiz_iterations, rescale_info, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
+        ruiz_rescaling(state, params->l_inf_ruiz_iterations, rescale_info, constraint_rescaling, variable_rescaling);
     }
     if (params->has_pock_chambolle_alpha)
     {
         if (params->verbose) {
             printf("[Precondition] Pock-Chambolle scaling (alpha=%.4f)\n", params->pock_chambolle_alpha);
         }
-        pock_chambolle_rescaling(state, params->pock_chambolle_alpha, rescale_info, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
+        pock_chambolle_rescaling(state, params->pock_chambolle_alpha, rescale_info, constraint_rescaling, variable_rescaling);
     }
 
     rescale_info->con_bound_rescale = 1.0;
@@ -319,45 +360,125 @@ rescale_info_t *rescale_problem(
 
     CUDA_CHECK(cudaFree(constraint_rescaling));
     CUDA_CHECK(cudaFree(variable_rescaling));
-    CUDA_CHECK(cudaFree(inverse_constraint_rescaling));
-    CUDA_CHECK(cudaFree(inverse_variable_rescaling));
 
     return rescale_info;
+}
+
+void apply_diagonal_scaling(pdhg_solver_state_t *state)
+{
+    int num_variables = state->num_variables;
+    int num_constraints = state->num_constraints;
+
+    double *diag_variable_rescaling = nullptr;
+    double *diag_constraint_rescaling = nullptr;
+    CUDA_CHECK(cudaMalloc(&diag_variable_rescaling, num_variables * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&diag_constraint_rescaling, num_constraints * sizeof(double)));
+
+    //print_stats("delta_primal", state->delta_primal_solution, num_variables, state->blas_handle);
+    //print_stats("delta_dual", state->delta_dual_solution, num_constraints, state->blas_handle);
+
+    double l2_dx, l2_dy;
+    cublasDnrm2_v2_64(state->blas_handle, num_variables, state->delta_primal_solution, 1, &l2_dx);
+    cublasDnrm2_v2_64(state->blas_handle, num_constraints, state->delta_dual_solution, 1, &l2_dy);
+
+    double rms_dx = l2_dx / sqrt((double)num_variables);
+    double rms_dy = l2_dy / sqrt((double)num_constraints);
+
+    double tau_x = fmax(SCALING_EPSILON, 1e-2 * rms_dx);
+    double tau_y = fmax(SCALING_EPSILON, 1e-2 * rms_dy);
+
+    compute_diagonal_variable_rescaling_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->constraint_matrix_t->row_ptr,
+        state->constraint_matrix_t->col_ind,
+        state->constraint_matrix_t->val,
+        state->delta_primal_solution,
+        state->delta_dual_solution,
+        diag_variable_rescaling,
+        num_variables,
+        tau_x);
+
+    compute_diagonal_constraint_rescaling_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->constraint_matrix->row_ptr,
+        state->constraint_matrix->col_ind,
+        state->constraint_matrix->val,
+        state->delta_primal_solution,
+        state->delta_dual_solution,
+        diag_constraint_rescaling,
+        num_constraints,
+        tau_y);
+
+    //print_stats("var_rescale", diag_variable_rescaling, num_variables, state->blas_handle);
+    //print_stats("con_rescale", diag_constraint_rescaling, num_constraints, state->blas_handle);
+
+    scale_problem(state, diag_constraint_rescaling, diag_variable_rescaling);
+
+    accum_rescaling_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->variable_rescaling, diag_variable_rescaling, num_variables);
+
+    accum_rescaling_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->constraint_rescaling, diag_constraint_rescaling, num_constraints);
+
+    scale_primal_solution_state_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->current_primal_solution,
+        state->pdhg_primal_solution,
+        state->reflected_primal_solution,
+        state->delta_primal_solution,
+        diag_variable_rescaling,
+        num_variables);
+
+    scale_dual_solution_state_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->current_dual_solution,
+        state->pdhg_dual_solution,
+        state->reflected_dual_solution,
+        state->delta_dual_solution,
+        diag_constraint_rescaling,
+        num_constraints);
+
+    CUDA_CHECK(cudaFree(diag_variable_rescaling));
+    CUDA_CHECK(cudaFree(diag_constraint_rescaling));
+
+    CUDA_CHECK(cudaGetLastError());
 }
 
 __global__ void scale_variables_kernel(double *__restrict__ objective_vector,
                                        double *__restrict__ variable_lower_bound,
                                        double *__restrict__ variable_upper_bound,
+                                       double *__restrict__ variable_lower_bound_finite_val,
+                                       double *__restrict__ variable_upper_bound_finite_val,
                                        double *__restrict__ initial_primal_solution,
                                        const double *__restrict__ variable_rescaling,
-                                       const double *__restrict__ inverse_variable_rescaling,
                                        int num_variables)
 {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     if (j >= num_variables)
         return;
     double dj = variable_rescaling[j];
-    double inv_dj = inverse_variable_rescaling[j];
+    double inv_dj = 1.0 / dj;
     objective_vector[j] *= inv_dj;
     variable_lower_bound[j] *= dj;
     variable_upper_bound[j] *= dj;
+    variable_lower_bound_finite_val[j] *= dj;
+    variable_upper_bound_finite_val[j] *= dj;
     initial_primal_solution[j] *= dj;
 }
 
 __global__ void scale_constraints_kernel(double *__restrict__ constraint_lower_bound,
                                          double *__restrict__ constraint_upper_bound,
+                                         double *__restrict__ constraint_lower_bound_finite_val,
+                                         double *__restrict__ constraint_upper_bound_finite_val,
                                          double *__restrict__ initial_dual_solution,
                                          const double *__restrict__ constraint_rescaling,
-                                         const double *__restrict__ inverse_constraint_rescaling,
                                          int num_constraints)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_constraints)
         return;
-    double inv_ei = inverse_constraint_rescaling[i];
     double ei = constraint_rescaling[i];
+    double inv_ei = 1.0 / ei;
     constraint_lower_bound[i] *= inv_ei;
     constraint_upper_bound[i] *= inv_ei;
+    constraint_lower_bound_finite_val[i] *= inv_ei;
+    constraint_upper_bound_finite_val[i] *= inv_ei;
     initial_dual_solution[i] *= ei;
 }
 
@@ -366,8 +487,8 @@ __global__ void scale_csr_nnz_kernel(const int *__restrict__ constraint_row_ind,
                                      double *__restrict__ constraint_matrix_val,
                                      double *__restrict__ constraint_matrix_transpose_val,
                                      const int *__restrict__ constraint_to_transpose_position,
-                                     const double *__restrict__ inverse_variable_rescaling,
-                                     const double *__restrict__ inverse_constraint_rescaling,
+                                     const double *__restrict__ variable_rescaling,
+                                     const double *__restrict__ constraint_rescaling,
                                      int nnz)
 {
     for (int k = blockIdx.x * blockDim.x + threadIdx.x;
@@ -376,7 +497,8 @@ __global__ void scale_csr_nnz_kernel(const int *__restrict__ constraint_row_ind,
     {
         int i = constraint_row_ind[k];
         int j = constraint_col_ind[k];
-        double scale = inverse_variable_rescaling[j] * inverse_constraint_rescaling[i];
+        double dj = variable_rescaling[j], ei = constraint_rescaling[i];
+        double scale = 1.0 / (dj * ei);
         constraint_matrix_val[k] *= scale;
         constraint_matrix_transpose_val[constraint_to_transpose_position[k]] *= scale;
     }
@@ -390,13 +512,12 @@ __global__ void compute_csr_row_absmax_kernel(const int *__restrict__ row_ptr,
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_rows)
         return;
-    int s = row_ptr[i], e = row_ptr[i + 1];
+    int s = row_ptr[i];
+    int e = row_ptr[i + 1];
     double m = 0.0;
     for (int k = s; k < e; ++k)
     {
         double v = fabs(matrix_vals[k]);
-        if (!isfinite(v))
-            v = 0.0;
         if (v > m)
             m = v;
     }
@@ -428,15 +549,12 @@ __global__ void compute_csr_row_powsum_kernel(const int *__restrict__ row_ptr,
     for (int k = s; k < e; ++k)
     {
         double v = fabs(matrix_vals[k]);
-        if (!isfinite(v))
-            v = 0.0;
         acc += pow_fast(v, degree);
     }
     row_powsum_values[i] = acc;
 }
 
 __global__ void clamp_sqrt_and_accum_kernel(double *__restrict__ scaling_factors,
-                                            double *__restrict__ inverse_scaling_factors,
                                             double *__restrict__ cumulative_rescaling,
                                             int num_variables)
 {
@@ -446,7 +564,6 @@ __global__ void clamp_sqrt_and_accum_kernel(double *__restrict__ scaling_factors
         double s = (v < SCALING_EPSILON) ? 1.0 : sqrt(v);
         cumulative_rescaling[t] *= s;
         scaling_factors[t] = s;
-        inverse_scaling_factors[t] = 1.0 / s;
     }
 }
 
@@ -457,16 +574,13 @@ __global__ void compute_bound_contrib_kernel(
     double *__restrict__ contrib)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_constraints) return;
-
+    if (i >= num_constraints)
+        return;
     double Li = constraint_lower_bound[i];
     double Ui = constraint_upper_bound[i];
     bool fL = isfinite(Li);
     bool fU = isfinite(Ui);
-
     double acc = 0.0;
-
-    // follow the existing semantics
     if (fL && (!fU || fabs(Li - Ui) > SCALING_EPSILON))
         acc += Li * Li;
     if (fU)
@@ -478,6 +592,8 @@ __global__ void compute_bound_contrib_kernel(
 __global__ void scale_bounds_kernel(
     double *__restrict__ constraint_lower_bound,
     double *__restrict__ constraint_upper_bound,
+    double *__restrict__ constraint_lower_bound_finite_val,
+    double *__restrict__ constraint_upper_bound_finite_val,
     double *__restrict__ initial_dual_solution,
     int num_constraints,
     double constraint_scale,
@@ -488,6 +604,8 @@ __global__ void scale_bounds_kernel(
         return;
     constraint_lower_bound[i] *= constraint_scale;
     constraint_upper_bound[i] *= constraint_scale;
+    constraint_lower_bound_finite_val[i] *= constraint_scale;
+    constraint_upper_bound_finite_val[i] *= constraint_scale;
     initial_dual_solution[i] *= objective_scale;
 }
 
@@ -495,6 +613,8 @@ __global__ void scale_objective_kernel(
     double *__restrict__ objective_vector,
     double *__restrict__ variable_lower_bound,
     double *__restrict__ variable_upper_bound,
+    double *__restrict__ variable_lower_bound_finite_val,
+    double *__restrict__ variable_upper_bound_finite_val,
     double *__restrict__ initial_primal_solution,
     int num_variables,
     double constraint_scale,
@@ -505,6 +625,8 @@ __global__ void scale_objective_kernel(
         return;
     variable_lower_bound[j] *= constraint_scale;
     variable_upper_bound[j] *= constraint_scale;
+    variable_lower_bound_finite_val[j] *= constraint_scale;
+    variable_upper_bound_finite_val[j] *= constraint_scale;
     objective_vector[j] *= objective_scale;
     initial_primal_solution[j] *= constraint_scale;
 }
@@ -514,4 +636,168 @@ __global__ void fill_ones_kernel(double *__restrict__ x, int num_variables)
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_variables)
         x[i] = 1.0;
+}
+
+__global__ void compute_diagonal_constraint_rescaling_kernel(
+    const int *__restrict__ row_ptr,
+    const int *__restrict__ col_ind,
+    const double *__restrict__ matrix_vals,
+    const double *__restrict__ delta_primal_solution,
+    const double *__restrict__ delta_dual_solution,
+    double *__restrict__ constraint_rescaling,
+    int num_constraints,
+    double tau_y)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_constraints)
+        return;
+
+    double denom = fabs(delta_dual_solution[i]);
+
+    if (denom <= tau_y) {
+        constraint_rescaling[i] = 1.0;
+        return;
+    }
+
+    int s = row_ptr[i];
+    int e = row_ptr[i + 1];
+
+    double acc = 0.0;
+    for (int k = s; k < e; ++k)
+    {
+        int j = col_ind[k];
+        double a = fabs(matrix_vals[k]);
+        double numer = fabs(delta_primal_solution[j]);
+        acc += a * (numer / denom);
+    }
+
+    constraint_rescaling[i] = fmin(fmax(sqrt(acc), DIAG_SCALE_MIN), DIAG_SCALE_MAX);
+}
+
+__global__ void compute_diagonal_variable_rescaling_kernel(
+    const int *__restrict__ row_ptr_t,
+    const int *__restrict__ col_ind_t,
+    const double *__restrict__ matrix_vals_t,
+    const double *__restrict__ delta_primal_solution,
+    const double *__restrict__ delta_dual_solution,
+    double *__restrict__ variable_rescaling,
+    int num_variables,
+    double tau_x)
+{
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    if (j >= num_variables)
+        return;
+
+    double denom = fabs(delta_primal_solution[j]);
+
+    if (denom <= tau_x) {
+        variable_rescaling[j] = 1.0;
+        return;
+    }
+
+    int s = row_ptr_t[j];
+    int e = row_ptr_t[j + 1];
+
+    double acc = 0.0;
+    for (int k = s; k < e; ++k)
+    {
+        int i = col_ind_t[k];
+        double a = fabs(matrix_vals_t[k]);
+        double numer = fabs(delta_dual_solution[i]);
+        acc += a * (numer / denom);
+    }
+
+    variable_rescaling[j] = fmin(fmax(sqrt(acc), DIAG_SCALE_MIN), DIAG_SCALE_MAX);
+}
+
+__global__ void accum_rescaling_kernel(double *cumulative,
+                                       const double *step_scale,
+                                       int n)
+{
+    int t = blockIdx.x * blockDim.x + threadIdx.x;
+    if (t < n)
+        cumulative[t] *= step_scale[t];
+}
+
+__global__ void scale_primal_solution_state_kernel(
+    double *__restrict__ current_primal_solution,
+    double *__restrict__ pdhg_primal_solution,
+    double *__restrict__ reflected_primal_solution,
+    double *__restrict__ delta_primal_solution,
+    const double *__restrict__ variable_rescaling,
+    int num_variables)
+{
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    if (j >= num_variables)
+        return;
+    double dj = variable_rescaling[j];
+    current_primal_solution[j] *= dj;
+    pdhg_primal_solution[j] *= dj;
+    reflected_primal_solution[j] *= dj;
+    delta_primal_solution[j] *= dj;
+}
+
+__global__ void scale_dual_solution_state_kernel(
+    double *__restrict__ current_dual_solution,
+    double *__restrict__ pdhg_dual_solution,
+    double *__restrict__ reflected_dual_solution,
+    double *__restrict__ delta_dual_solution,
+    const double *__restrict__ constraint_rescaling,
+    int num_constraints)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_constraints)
+        return;
+    double ei = constraint_rescaling[i];
+    current_dual_solution[i] *= ei;
+    pdhg_dual_solution[i] *= ei;
+    reflected_dual_solution[i] *= ei;
+    delta_dual_solution[i] *= ei;
+}
+
+__global__ void compute_inverse_array(const double *__restrict__ in,
+                                      double *__restrict__ out,
+                                      int n)
+{
+    int t = blockIdx.x * blockDim.x + threadIdx.x;
+    if (t >= n)
+        return;
+    double v = in[t];
+    out[t] = 1.0 / v;
+}
+
+static void print_stats(const char* name, const double* d_x, int n, cublasHandle_t handle)
+{
+    double *d_min = nullptr, *d_max = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_min, sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&d_max, sizeof(double)));
+
+    void *tmp = nullptr;
+    size_t bytes_min = 0, bytes_max = 0;
+    CUDA_CHECK(cub::DeviceReduce::Min(nullptr, bytes_min, d_x, d_min, n));
+    CUDA_CHECK(cub::DeviceReduce::Max(nullptr, bytes_max, d_x, d_max, n));
+
+    size_t bytes = std::max(bytes_min, bytes_max);
+    CUDA_CHECK(cudaMalloc(&tmp, bytes));
+
+    CUDA_CHECK(cub::DeviceReduce::Min(tmp, bytes, d_x, d_min, n));
+    CUDA_CHECK(cub::DeviceReduce::Max(tmp, bytes, d_x, d_max, n));
+
+    double h_min = 0.0, h_max = 0.0;
+    CUDA_CHECK(cudaMemcpy(&h_min, d_min, sizeof(double), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_max, d_max, sizeof(double), cudaMemcpyDeviceToHost));
+
+    double l2 = 0.0;
+    CUBLAS_CHECK(cublasDnrm2(handle, n, d_x, 1, &l2));
+    double rms = l2 / sqrt((double)n);
+
+    double denom = fmax(fabs(h_min), 1e-300);
+    double ratio = h_max / denom;
+
+    printf("%s: min=%.3e max=%.3e ratio=%.3e | L2=%.3e RMS=%.3e (n=%d)\n",
+           name, h_min, h_max, ratio, l2, rms, n);
+
+    CUDA_CHECK(cudaFree(tmp));
+    CUDA_CHECK(cudaFree(d_min));
+    CUDA_CHECK(cudaFree(d_max));
 }
