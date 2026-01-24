@@ -182,8 +182,6 @@ void print_usage(const char *prog_name)
                     "Relative optimality tolerance (default: 1e-4).\n");
     fprintf(stderr, "      --eps_feas <tolerance>          "
                     "Relative feasibility tolerance (default: 1e-4).\n");
-    fprintf(stderr, "      --eps_infeas_detect <tolerance> "
-                    "Infeasibility detection tolerance (default: 1e-10).\n");
     fprintf(stderr, "      --l_inf_ruiz_iter <int>         "
                     "Iterations for L-inf Ruiz rescaling (default: 10).\n");
     fprintf(stderr, "      --no_pock_chambolle             "
@@ -220,7 +218,6 @@ int main(int argc, char *argv[])
         {"iter_limit", required_argument, 0, 1002},
         {"eps_opt", required_argument, 0, 1003},
         {"eps_feas", required_argument, 0, 1004},
-        {"eps_infeas_detect", required_argument, 0, 1005},
         {"eps_feas_polish", required_argument, 0, 1006},
         {"feasibility_polishing", no_argument, 0, 'f'},
         {"l_inf_ruiz_iter", required_argument, 0, 1007},
@@ -256,9 +253,6 @@ int main(int argc, char *argv[])
             break;
         case 1004: // --eps_feas
             params.termination_criteria.eps_feasible_relative = atof(optarg);
-            break;
-        case 1005: // --eps_infeas_detect
-            params.termination_criteria.eps_infeasible = atof(optarg);
             break;
         case 1006: // --eps_feas_polish_relative
             params.termination_criteria.eps_feas_polish_relative = atof(optarg);

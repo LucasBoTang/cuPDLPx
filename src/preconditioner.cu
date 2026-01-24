@@ -269,7 +269,7 @@ rescale_info_t *rescale_problem(
     pdhg_solver_state_t *state)
 {
     if (params->verbose) {
-        printf("[Precondition] Start\n");
+        printf("\nPreconditioning\n");
     }
 
     int num_variables = state->num_variables;
@@ -293,14 +293,14 @@ rescale_info_t *rescale_problem(
     if (params->l_inf_ruiz_iterations > 0)
     {
         if (params->verbose) {
-            printf("[Precondition] Ruiz scaling (%d iterations)\n", params->l_inf_ruiz_iterations);
+            printf("  Ruiz scaling (%d iterations)\n", params->l_inf_ruiz_iterations);
         }
         ruiz_rescaling(state, params->l_inf_ruiz_iterations, rescale_info, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
     }
     if (params->has_pock_chambolle_alpha)
     {
         if (params->verbose) {
-            printf("[Precondition] Pock-Chambolle scaling (alpha=%.4f)\n", params->pock_chambolle_alpha);
+            printf("  Pock-Chambolle scaling (alpha=%.4f)\n", params->pock_chambolle_alpha);
         }
         pock_chambolle_rescaling(state, params->pock_chambolle_alpha, rescale_info, constraint_rescaling, variable_rescaling, inverse_constraint_rescaling, inverse_variable_rescaling);
     }
@@ -310,7 +310,7 @@ rescale_info_t *rescale_problem(
     if (params->bound_objective_rescaling)
     {
         if (params->verbose) {
-            printf("[Precondition] Bound-objective scaling\n");
+            printf("  Bound-objective scaling\n");
         }
         bound_objective_rescaling(state, rescale_info);
     }

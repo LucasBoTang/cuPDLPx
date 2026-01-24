@@ -67,6 +67,8 @@ typedef struct
 	double *reflected_dual_solution;
 	double *primal_product;
 	double step_size;
+	double *d_primal_step_size;
+	double *d_dual_step_size;
 	double primal_weight;
 	int total_count;
 	bool is_this_major_iteration;
@@ -82,6 +84,7 @@ typedef struct
 	double *primal_slack;
 	double *dual_slack;
 	double rescaling_time_sec;
+	clock_t start_time;
 	double cumulative_time_sec;
 
 	double *primal_residual;
@@ -106,6 +109,7 @@ typedef struct
 	double initial_fixed_point_error;
 	double last_trial_fixed_point_error;
 	int inner_count;
+	int *d_inner_count;
 
 	cusparseHandle_t sparse_handle;
 	cublasHandle_t blas_handle;
@@ -128,6 +132,8 @@ typedef struct
 
 	double feasibility_polishing_time;
 	int feasibility_iteration;
+
+    cudaStream_t stream;
 } pdhg_solver_state_t;
 
 typedef struct

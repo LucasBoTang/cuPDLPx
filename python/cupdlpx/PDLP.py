@@ -37,7 +37,6 @@ _PARAM_ALIAS = {
     # tolerances
     "OptimalityTol": "eps_optimal_relative",
     "FeasibilityTol": "eps_feasible_relative",
-    "InfeasibleTol": "eps_infeasible",
     # scaling / step size
     "RuizIters": "l_inf_ruiz_iterations",
     "UsePCAlpha": "has_pock_chambolle_alpha",

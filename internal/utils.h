@@ -124,6 +124,7 @@ extern "C"
 
     void check_feas_polishing_termination_criteria(
         pdhg_solver_state_t *solver_state,
+        const pdhg_solver_state_t *ori_solver_state,
         const termination_criteria_t *criteria,
         bool is_primal_polish);
 

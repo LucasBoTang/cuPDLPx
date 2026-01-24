@@ -253,21 +253,11 @@ bool dual_infeasibility_criteria_met(const pdhg_solver_state_t *state,
 void check_termination_criteria(pdhg_solver_state_t *solver_state,
                                 const termination_criteria_t *criteria)
 {
+    solver_state->cumulative_time_sec = (double)(clock() - solver_state->start_time) / CLOCKS_PER_SEC;
     if (optimality_criteria_met(solver_state, criteria->eps_optimal_relative,
                                 criteria->eps_feasible_relative))
     {
         solver_state->termination_reason = TERMINATION_REASON_OPTIMAL;
-        return;
-    }
-    if (primal_infeasibility_criteria_met(solver_state,
-                                          criteria->eps_infeasible))
-    {
-        solver_state->termination_reason = TERMINATION_REASON_PRIMAL_INFEASIBLE;
-        return;
-    }
-    if (dual_infeasibility_criteria_met(solver_state, criteria->eps_infeasible))
-    {
-        solver_state->termination_reason = TERMINATION_REASON_DUAL_INFEASIBLE;
         return;
     }
     if (solver_state->total_count >= criteria->iteration_limit)
@@ -336,7 +326,6 @@ void set_default_parameters(pdhg_parameters_t *params)
 
     params->termination_criteria.eps_optimal_relative = 1e-4;
     params->termination_criteria.eps_feasible_relative = 1e-4;
-    params->termination_criteria.eps_infeasible = 1e-10;
     params->termination_criteria.time_sec_limit = 3600.0;
     params->termination_criteria.iteration_limit = INT32_MAX;
     params->termination_criteria.eps_feas_polish_relative = 1e-6;
@@ -406,8 +395,6 @@ void print_initial_info(const pdhg_parameters_t *params,
            params->termination_criteria.eps_optimal_relative);
     printf("  eps_feas           : %.1e\n",
            params->termination_criteria.eps_feasible_relative);
-    printf("  eps_infeas_detect  : %.1e\n",
-           params->termination_criteria.eps_infeasible);
     if (params->optimality_norm != default_params.optimality_norm) {
         printf("  optimality_norm    : %s\n",
                params->optimality_norm == NORM_TYPE_L_INF ? "L_inf" : "L2");
@@ -528,13 +515,20 @@ int get_print_frequency(int iter)
 }
 
 __global__ void compute_residual_kernel(
-    double *primal_residual, const double *primal_product,
-    const double *constraint_lower_bound, const double *constraint_upper_bound,
-    const double *dual_solution, double *dual_residual,
-    const double *dual_product, const double *dual_slack,
-    const double *objective_vector, const double *constraint_rescaling,
-    const double *variable_rescaling, double *dual_obj_contribution,
-    const double *const_lb_finite, const double *const_ub_finite,
+    double *__restrict__ primal_residual,
+    const double *__restrict__ primal_product,
+    const double *__restrict__ constraint_lower_bound,
+    const double *__restrict__ constraint_upper_bound,
+    const double *__restrict__ dual_solution,
+    double *__restrict__ dual_residual,
+    const double *__restrict__ dual_product,
+    const double *__restrict__ dual_slack,
+    const double *__restrict__ objective_vector,
+    const double *__restrict__ constraint_rescaling,
+    const double *__restrict__ variable_rescaling,
+    double *__restrict__ dual_obj_contribution,
+    const double *__restrict__ const_lb_finite,
+    const double *__restrict__ const_ub_finite,
     int num_constraints, int num_variables)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -562,8 +556,9 @@ __global__ void compute_residual_kernel(
 }
 
 __global__ void primal_infeasibility_project_kernel(
-    double *primal_ray_estimate, const double *variable_lower_bound,
-    const double *variable_upper_bound, int num_variables)
+    double *__restrict__ primal_ray_estimate,
+    const double *__restrict__ variable_lower_bound,
+    const double *__restrict__ variable_upper_bound, int num_variables)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_variables)
@@ -580,8 +575,9 @@ __global__ void primal_infeasibility_project_kernel(
 }
 
 __global__ void dual_infeasibility_project_kernel(
-    double *dual_ray_estimate, const double *constraint_lower_bound,
-    const double *constraint_upper_bound, int num_constraints)
+    double *__restrict__ dual_ray_estimate,
+    const double *__restrict__ constraint_lower_bound,
+    const double *__restrict__ constraint_upper_bound, int num_constraints)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_constraints)
@@ -598,9 +594,11 @@ __global__ void dual_infeasibility_project_kernel(
 }
 
 __global__ void compute_primal_infeasibility_kernel(
-    const double *primal_product, const double *const_lb,
-    const double *const_ub, int num_constraints, double *primal_infeasibility,
-    const double *constraint_rescaling)
+    const double *__restrict__ primal_product,
+    const double *__restrict__ const_lb,
+    const double *__restrict__ const_ub, int num_constraints,
+    double *__restrict__ primal_infeasibility,
+    const double *__restrict__ constraint_rescaling)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_constraints)
@@ -614,9 +612,11 @@ __global__ void compute_primal_infeasibility_kernel(
 
 __global__ void
 compute_dual_infeasibility_kernel(const double *dual_product,
-                                  const double *var_lb, const double *var_ub,
-                                  int num_variables, double *dual_infeasibility,
-                                  const double *variable_rescaling)
+                                  const double *__restrict__ var_lb,
+                                  const double *__restrict__ var_ub,
+                                  int num_variables,
+                                  double *__restrict__ dual_infeasibility,
+                                  const double *__restrict__ variable_rescaling)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_variables)
@@ -629,10 +629,10 @@ compute_dual_infeasibility_kernel(const double *dual_product,
 }
 
 __global__ void dual_solution_dual_objective_contribution_kernel(
-    const double *constraint_lower_bound_finite_val,
-    const double *constraint_upper_bound_finite_val,
-    const double *dual_solution, int num_constraints,
-    double *dual_objective_dual_solution_contribution_array)
+    const double *__restrict__ constraint_lower_bound_finite_val,
+    const double *__restrict__ constraint_upper_bound_finite_val,
+    const double *__restrict__ dual_solution, int num_constraints,
+    double *__restrict__ dual_objective_dual_solution_contribution_array)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -645,10 +645,11 @@ __global__ void dual_solution_dual_objective_contribution_kernel(
 }
 
 __global__ void dual_objective_dual_slack_contribution_array_kernel(
-    const double *dual_slack,
-    double *dual_objective_dual_slack_contribution_array,
-    const double *variable_lower_bound_finite_val,
-    const double *variable_upper_bound_finite_val, int num_variables)
+    const double *__restrict__ dual_slack,
+    double *__restrict__ dual_objective_dual_slack_contribution_array,
+    const double *__restrict__ variable_lower_bound_finite_val,
+    const double *__restrict__ variable_upper_bound_finite_val,
+    int num_variables)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -703,7 +704,7 @@ void compute_residual(pdhg_solver_state_t *state, norm_type_t optimality_norm)
         state->matAt, state->vec_dual_sol, &HOST_ZERO, state->vec_dual_prod,
         CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->dual_spmv_buffer));
 
-    compute_residual_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK>>>(
+    compute_residual_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK, 0, state->stream>>>(
         state->primal_residual, state->primal_product,
         state->constraint_lower_bound, state->constraint_upper_bound,
         state->pdhg_dual_solution, state->dual_residual, state->dual_product,
@@ -772,11 +773,11 @@ void compute_residual(pdhg_solver_state_t *state, norm_type_t optimality_norm)
 void compute_infeasibility_information(pdhg_solver_state_t *state)
 {
     primal_infeasibility_project_kernel<<<state->num_blocks_primal,
-                                          THREADS_PER_BLOCK>>>(
+                                          THREADS_PER_BLOCK, 0, state->stream>>>(
         state->delta_primal_solution, state->variable_lower_bound,
         state->variable_upper_bound, state->num_variables);
     dual_infeasibility_project_kernel<<<state->num_blocks_dual,
-                                        THREADS_PER_BLOCK>>>(
+                                        THREADS_PER_BLOCK, 0, state->stream>>>(
         state->delta_dual_solution, state->constraint_lower_bound,
         state->constraint_upper_bound, state->num_constraints);
 
@@ -817,13 +818,13 @@ void compute_infeasibility_information(pdhg_solver_state_t *state)
         (state->constraint_bound_rescaling * state->objective_vector_rescaling);
 
     dual_solution_dual_objective_contribution_kernel<<<state->num_blocks_dual,
-                                                       THREADS_PER_BLOCK>>>(
+                                                       THREADS_PER_BLOCK, 0, state->stream>>>(
         state->constraint_lower_bound_finite_val,
         state->constraint_upper_bound_finite_val, state->delta_dual_solution,
         state->num_constraints, state->primal_slack);
 
     dual_objective_dual_slack_contribution_array_kernel<<<
-        state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->num_blocks_primal, THREADS_PER_BLOCK, 0, state->stream>>>(
         state->dual_product, state->dual_slack,
         state->variable_lower_bound_finite_val,
         state->variable_upper_bound_finite_val, state->num_variables);
@@ -839,12 +840,12 @@ void compute_infeasibility_information(pdhg_solver_state_t *state)
         (state->constraint_bound_rescaling * state->objective_vector_rescaling);
 
     compute_primal_infeasibility_kernel<<<state->num_blocks_dual,
-                                          THREADS_PER_BLOCK>>>(
+                                          THREADS_PER_BLOCK, 0, state->stream>>>(
         state->primal_product, state->constraint_lower_bound,
         state->constraint_upper_bound, state->num_constraints,
         state->primal_slack, state->constraint_rescaling);
     compute_dual_infeasibility_kernel<<<state->num_blocks_primal,
-                                        THREADS_PER_BLOCK>>>(
+                                        THREADS_PER_BLOCK, 0, state->stream>>>(
         state->dual_product, state->variable_lower_bound,
         state->variable_upper_bound, state->num_variables, state->dual_slack,
         state->variable_rescaling);
@@ -1100,9 +1101,11 @@ int coo_to_csr(const matrix_desc_t *desc, int **row_ptr, int **col_ind,
 
 void check_feas_polishing_termination_criteria(
     pdhg_solver_state_t *solver_state,
+    const pdhg_solver_state_t *ori_solver_state,
     const termination_criteria_t *criteria,
     bool is_primal_polish)
 {
+    solver_state->cumulative_time_sec = (double)(clock() - solver_state->start_time) / CLOCKS_PER_SEC;
     if (is_primal_polish)
     {
         if (solver_state->relative_primal_residual <= criteria->eps_feas_polish_relative)
@@ -1124,7 +1127,8 @@ void check_feas_polishing_termination_criteria(
         solver_state->termination_reason = TERMINATION_REASON_ITERATION_LIMIT;
         return;
     }
-    if (solver_state->cumulative_time_sec >= criteria->time_sec_limit)
+    double total_time_sec = (double)(clock() - ori_solver_state->start_time) / CLOCKS_PER_SEC;
+    if (total_time_sec >= criteria->time_sec_limit)
     {
         solver_state->termination_reason = TERMINATION_REASON_TIME_LIMIT;
         return;
@@ -1157,10 +1161,10 @@ void pdhg_feas_polish_final_log(const pdhg_solver_state_t *primal_state, const p
     }
     printf("Feasibility Polishing Summary\n");
     printf("  Primal Status        : %s\n", termination_reason_to_string(primal_state->termination_reason));
-    printf("  Primal Iterations    : %d\n", primal_state->total_count - 1);
+    printf("  Primal Iterations    : %d\n", primal_state->total_count);
     printf("  Primal Time Usage    : %.3g sec\n", primal_state->cumulative_time_sec);
     printf("  Dual Status          : %s\n", termination_reason_to_string(dual_state->termination_reason));
-    printf("  Dual Iterations      : %d\n", dual_state->total_count - 1);
+    printf("  Dual Iterations      : %d\n", dual_state->total_count);
     printf("  Dual Time Usage      : %.3g sec\n", dual_state->cumulative_time_sec);
     printf("  Primal Residual      : %.3e\n", primal_state->relative_primal_residual);
     printf("  Dual Residual        : %.3e\n", dual_state->relative_dual_residual);
@@ -1197,11 +1201,11 @@ void display_feas_polish_iteration_stats(const pdhg_solver_state_t *state, bool 
 }
 
 __global__ void compute_primal_feas_polish_residual_kernel(
-    double *primal_residual,
-    const double *primal_product,
-    const double *constraint_lower_bound,
-    const double *constraint_upper_bound,
-    const double *constraint_rescaling,
+    double *__restrict__ primal_residual,
+    const double *__restrict__ primal_product,
+    const double *__restrict__ constraint_lower_bound,
+    const double *__restrict__ constraint_upper_bound,
+    const double *__restrict__ constraint_rescaling,
     int num_constraints)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1215,15 +1219,15 @@ __global__ void compute_primal_feas_polish_residual_kernel(
 }
 
 __global__ void compute_dual_feas_polish_residual_kernel(
-    double *dual_residual,
-    const double *dual_solution,
-    const double *dual_product,
-    const double *dual_slack,
-    const double *objective_vector,
-    const double *variable_rescaling,
-    double *dual_obj_contribution,
-    const double *const_lb_finite,
-    const double *const_ub_finite,
+    double *__restrict__ dual_residual,
+    const double *__restrict__ dual_solution,
+    const double *__restrict__ dual_product,
+    const double *__restrict__ dual_slack,
+    const double *__restrict__ objective_vector,
+    const double *__restrict__ variable_rescaling,
+    double *__restrict__ dual_obj_contribution,
+    const double *__restrict__ const_lb_finite,
+    const double *__restrict__ const_ub_finite,
     int num_variables,
     int num_constraints)
 {
@@ -1247,7 +1251,7 @@ void compute_primal_feas_polish_residual(pdhg_solver_state_t *state, const pdhg_
 
     CUSPARSE_CHECK(cusparseSpMV(state->sparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &HOST_ONE, state->matA, state->vec_primal_sol, &HOST_ZERO, state->vec_primal_prod, CUDA_R_64F, CUSPARSE_SPMV_CSR_ALG2, state->primal_spmv_buffer));
 
-    compute_primal_feas_polish_residual_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+    compute_primal_feas_polish_residual_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK, 0, state->stream>>>(
         state->primal_residual, state->primal_product, state->constraint_lower_bound,
         state->constraint_upper_bound, state->constraint_rescaling,
         state->num_constraints);

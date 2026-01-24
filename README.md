@@ -87,7 +87,6 @@ After building the project, the `./build/cupdlpx` binary can be invoked from the
 | `--opt_norm` | `string` | Norm for optimality criteria: `l2` or `linf` | `l2` |
 | `--eps_opt` | `double` | Relative optimality tolerance. | `1e-4` |
 | `--eps_feas` | `double` | Relative feasibility tolerance. | `1e-4` |
-| `--eps_infeas_detect` | `double` | Infeasibility detection tolerance. | `1e-10` |
 | `--l_inf_ruiz_iter` | `int` | Iterations for L-inf Ruiz rescaling| `10` |
 | `--no_pock_chambolle` | `flag` | Disable Pock-Chambolle rescaling | `enabled` |
 | `--pock_chambolle_alpha` | `float` | Value for Pock-Chambolle alpha | `1.0` |
