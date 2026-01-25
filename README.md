@@ -111,6 +111,9 @@ The solver generates three text files in the specified <output_directory>. The f
 The `cupdlpx` Python package supports building and solving LPs directly with `NumPy` and `SciPy`.
 Documentation and examples are available in the [Python API Guide](python/README.md).
 
+### Julia Interface
+`CuPDLPx.jl` provides a `JuMP`/`MathOptInterface` wrapper for cuPDLPx, enabling cuPDLPx to be used as a solver backend for `JuMP` models. Documentation and examples are available at: [CuPDLPx.jl](https://github.com/MIT-Lu-Lab/CuPDLPx.jl).
+
 ### C Interface
 The public C API is defined in header file [`include/cupdlpx.h`](include/cupdlpx.h). A detailed description with usage examples can be found in the [C API Guide](docs/C_API.md).
 
