@@ -102,21 +102,6 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
     }
     fprintf(outfile, "Termination Reason: %s\n",
             termination_reason_to_string(result->termination_reason));
-    fprintf(outfile, "Runtime (sec): %e\n", result->cumulative_time_sec);
-    fprintf(outfile, "Iterations Count: %d\n", result->total_count);
-    fprintf(outfile, "Primal Objective Value: %e\n",
-            result->primal_objective_value);
-    fprintf(outfile, "Dual Objective Value: %e\n", result->dual_objective_value);
-    fprintf(outfile, "Relative Primal Residual: %e\n",
-            result->relative_primal_residual);
-    fprintf(outfile, "Relative Dual Residual: %e\n",
-            result->relative_dual_residual);
-    fprintf(outfile, "Absolute Objective Gap: %e\n", result->objective_gap);
-    fprintf(outfile, "Relative Objective Gap: %e\n",
-            result->relative_objective_gap);
-    fprintf(outfile, "Rows: %d\n", result->num_constraints);
-    fprintf(outfile, "Columns: %d\n", result->num_variables);
-    fprintf(outfile, "Nonzeros: %d\n", result->num_nonzeros);
     if (result->presolve_time > 0.0)
     {
         fprintf(outfile, "Presolve Status: %s\n", get_presolve_status_str(result->presolve_status));
@@ -142,6 +127,22 @@ void save_solver_summary(const cupdlpx_result_t *result, const char *output_dir,
         //     fprintf(outfile, "Postsolve Time (sec): %e\n", result->presolve_stats.time_postsolve);
         // }
     }
+    fprintf(outfile, "Precondition time (sec): %e\n", result->rescaling_time_sec);
+    fprintf(outfile, "Runtime (sec): %e\n", result->cumulative_time_sec);
+    fprintf(outfile, "Iterations Count: %d\n", result->total_count);
+    fprintf(outfile, "Primal Objective Value: %e\n",
+            result->primal_objective_value);
+    fprintf(outfile, "Dual Objective Value: %e\n", result->dual_objective_value);
+    fprintf(outfile, "Relative Primal Residual: %e\n",
+            result->relative_primal_residual);
+    fprintf(outfile, "Relative Dual Residual: %e\n",
+            result->relative_dual_residual);
+    fprintf(outfile, "Absolute Objective Gap: %e\n", result->objective_gap);
+    fprintf(outfile, "Relative Objective Gap: %e\n",
+            result->relative_objective_gap);
+    fprintf(outfile, "Rows: %d\n", result->num_constraints);
+    fprintf(outfile, "Columns: %d\n", result->num_variables);
+    fprintf(outfile, "Nonzeros: %d\n", result->num_nonzeros);
     if (result->feasibility_polishing_time > 0.0)
     {
         fprintf(outfile, "Feasibility Polishing Time (sec): %e\n", result->feasibility_polishing_time);
@@ -181,8 +182,6 @@ void print_usage(const char *prog_name)
                     "Relative optimality tolerance (default: 1e-4).\n");
     fprintf(stderr, "      --eps_feas <tolerance>          "
                     "Relative feasibility tolerance (default: 1e-4).\n");
-    fprintf(stderr, "      --eps_infeas_detect <tolerance> "
-                    "Infeasibility detection tolerance (default: 1e-10).\n");
     fprintf(stderr, "      --l_inf_ruiz_iter <int>         "
                     "Iterations for L-inf Ruiz rescaling (default: 10).\n");
     fprintf(stderr, "      --no_pock_chambolle             "
@@ -219,7 +218,6 @@ int main(int argc, char *argv[])
         {"iter_limit", required_argument, 0, 1002},
         {"eps_opt", required_argument, 0, 1003},
         {"eps_feas", required_argument, 0, 1004},
-        {"eps_infeas_detect", required_argument, 0, 1005},
         {"eps_feas_polish", required_argument, 0, 1006},
         {"feasibility_polishing", no_argument, 0, 'f'},
         {"l_inf_ruiz_iter", required_argument, 0, 1007},
@@ -255,9 +253,6 @@ int main(int argc, char *argv[])
             break;
         case 1004: // --eps_feas
             params.termination_criteria.eps_feasible_relative = atof(optarg);
-            break;
-        case 1005: // --eps_infeas_detect
-            params.termination_criteria.eps_infeasible = atof(optarg);
             break;
         case 1006: // --eps_feas_polish_relative
             params.termination_criteria.eps_feas_polish_relative = atof(optarg);

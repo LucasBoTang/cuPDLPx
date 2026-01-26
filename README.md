@@ -87,7 +87,6 @@ After building the project, the `./build/cupdlpx` binary can be invoked from the
 | `--opt_norm` | `string` | Norm for optimality criteria: `l2` or `linf` | `l2` |
 | `--eps_opt` | `double` | Relative optimality tolerance. | `1e-4` |
 | `--eps_feas` | `double` | Relative feasibility tolerance. | `1e-4` |
-| `--eps_infeas_detect` | `double` | Infeasibility detection tolerance. | `1e-10` |
 | `--l_inf_ruiz_iter` | `int` | Iterations for L-inf Ruiz rescaling| `10` |
 | `--no_pock_chambolle` | `flag` | Disable Pock-Chambolle rescaling | `enabled` |
 | `--pock_chambolle_alpha` | `float` | Value for Pock-Chambolle alpha | `1.0` |
@@ -111,6 +110,9 @@ The solver generates three text files in the specified <output_directory>. The f
 ### Python Interface
 The `cupdlpx` Python package supports building and solving LPs directly with `NumPy` and `SciPy`.
 Documentation and examples are available in the [Python API Guide](python/README.md).
+
+### Julia Interface
+`CuPDLPx.jl` provides a `JuMP`/`MathOptInterface` wrapper for cuPDLPx, enabling cuPDLPx to be used as a solver backend for `JuMP` models. Documentation and examples are available at: [CuPDLPx.jl](https://github.com/MIT-Lu-Lab/CuPDLPx.jl).
 
 ### C Interface
 The public C API is defined in header file [`include/cupdlpx.h`](include/cupdlpx.h). A detailed description with usage examples can be found in the [C API Guide](docs/C_API.md).

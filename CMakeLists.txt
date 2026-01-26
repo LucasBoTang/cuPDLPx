@@ -8,7 +8,7 @@ project(cupdlpx LANGUAGES C CXX CUDA)
 
 set(CUPDLPX_VERSION_MAJOR 0)
 set(CUPDLPX_VERSION_MINOR 2)
-set(CUPDLPX_VERSION_PATCH 2)
+set(CUPDLPX_VERSION_PATCH 5)
 
 set(CUPDLPX_VERSION "${CUPDLPX_VERSION_MAJOR}.${CUPDLPX_VERSION_MINOR}.${CUPDLPX_VERSION_PATCH}")
 add_compile_definitions(CUPDLPX_VERSION="${CUPDLPX_VERSION}")
@@ -26,14 +26,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
-    set(CMAKE_CUDA_ARCHITECTURES all)
-else()
-    set(CMAKE_CUDA_ARCHITECTURES 60 61 70 75 80 86 89 90 90-virtual)
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES 60 70 75 80 86 89 90)
 endif()
 
 # Global Compile flags (corresponding to CFLAGS/NVCCFLAGS)
-add_compile_options(-fPIC -O3 -Wall -Wextra -g)
+add_compile_options(-O3 -Wall -Wextra -g)
+if (NOT WIN32)
+  add_compile_options(-fPIC)
+endif()
 
 # Windows compatibility
 if (WIN32)
@@ -67,7 +68,38 @@ cmake_dependent_option(CUPDLPX_BUILD_TESTS "Build the cuPDLPx test suite" OFF
 # -----------------------------------------------------------------------------
 # Core dependencies (required for Julia/Yggdrasil and Python)
 find_package(CUDAToolkit REQUIRED)
-find_package(ZLIB REQUIRED)
+
+include(FetchContent)
+# 1. Try to find ZLIB in the system first (Standard for Linux/Mac)
+find_package(ZLIB QUIET)
+
+if(ZLIB_FOUND)
+    message(STATUS "Found System ZLIB: ${ZLIB_LIBRARIES}")
+else()
+    # 2. If not found (Common on Windows), fetch from source
+    message(STATUS "ZLIB not found in system. Fetching from source...")
+
+    FetchContent_Declare(
+        zlib
+        GIT_REPOSITORY https://github.com/madler/zlib.git
+        GIT_TAG        v1.3
+    )
+    FetchContent_MakeAvailable(zlib)
+
+    # 3. Create alias ZLIB::ZLIB to match your CORE_LINK_LIBS usage
+    if(NOT TARGET ZLIB::ZLIB)
+        if(TARGET zlibstatic)
+            # Prefer zlibstatic to ensure static linking (avoids DLL issues on Windows)
+            add_library(ZLIB::ZLIB ALIAS zlibstatic)
+            # Expose include directories so zlib.h can be found
+            target_include_directories(zlibstatic INTERFACE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+        else()
+            # Fallback if the target is simply named 'zlib'
+            add_library(ZLIB::ZLIB ALIAS zlib)
+            target_include_directories(zlib INTERFACE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+        endif()
+    endif()
+endif()
 
 if (CUPDLPX_BUILD_PYTHON)
     # Dependencies required only for Python bindings
@@ -75,9 +107,7 @@ if (CUPDLPX_BUILD_PYTHON)
     find_package(Python3 COMPONENTS Interpreter REQUIRED) # For versioning script and pybind11
 endif()
 
-include(FetchContent)
-
-set(PSLP_VERSION_TAG "v0.0.3")
+set(PSLP_VERSION_TAG "v0.0.4")
 
 FetchContent_Declare(
   pslp

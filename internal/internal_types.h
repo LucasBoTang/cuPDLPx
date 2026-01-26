@@ -28,7 +28,9 @@ typedef struct
 	int num_nonzeros;
 	int *row_ptr;
 	int *col_ind;
+	int *row_ind;
 	double *val;
+	int *transpose_map;
 } cu_sparse_matrix_csr_t;
 
 typedef struct
@@ -46,6 +48,7 @@ typedef struct
 	int num_blocks_primal;
 	int num_blocks_dual;
 	int num_blocks_primal_dual;
+	int num_blocks_nnz;
 	double objective_vector_norm;
 	double constraint_bound_norm;
 	double *constraint_lower_bound_finite_val;
@@ -64,6 +67,8 @@ typedef struct
 	double *reflected_dual_solution;
 	double *primal_product;
 	double step_size;
+	double *d_primal_step_size;
+	double *d_dual_step_size;
 	double primal_weight;
 	int total_count;
 	bool is_this_major_iteration;
@@ -79,6 +84,7 @@ typedef struct
 	double *primal_slack;
 	double *dual_slack;
 	double rescaling_time_sec;
+	clock_t start_time;
 	double cumulative_time_sec;
 
 	double *primal_residual;
@@ -103,6 +109,7 @@ typedef struct
 	double initial_fixed_point_error;
 	double last_trial_fixed_point_error;
 	int inner_count;
+	int *d_inner_count;
 
 	cusparseHandle_t sparse_handle;
 	cublasHandle_t blas_handle;
@@ -125,11 +132,12 @@ typedef struct
 
 	double feasibility_polishing_time;
 	int feasibility_iteration;
+
+    cudaStream_t stream;
 } pdhg_solver_state_t;
 
 typedef struct
 {
-	lp_problem_t *scaled_problem;
 	double *con_rescale;
 	double *var_rescale;
 	double con_bound_rescale;
