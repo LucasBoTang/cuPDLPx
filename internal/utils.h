@@ -75,6 +75,10 @@ extern "C"
 
     void *safe_realloc(void *ptr, size_t new_size);
 
+   void compute_objective_and_bound_norms(
+        pdhg_solver_state_t *state,
+        const pdhg_parameters_t *params);
+
     double estimate_maximum_singular_value(
         cusparseHandle_t sparse_handle,
         cublasHandle_t blas_handle,

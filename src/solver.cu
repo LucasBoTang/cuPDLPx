@@ -426,56 +426,7 @@ static pdhg_solver_state_t *initialize_solver_state(
                           state->initial_dual_solution,
                           con_bytes, cudaMemcpyDeviceToDevice));
 
-    double sum_of_squares = 0.0;
-    double max_val = 0.0;
-    double val = 0.0;
-    for (int i = 0; i < n_vars; ++i)
-    {
-        if (params->optimality_norm == NORM_TYPE_L_INF) {
-            val = fabs(working_problem->objective_vector[i]);
-            if (val > max_val) max_val = val;
-        } else {
-            sum_of_squares += working_problem->objective_vector[i] * working_problem->objective_vector[i];
-        }
-    }
-
-    if (params->optimality_norm == NORM_TYPE_L_INF) {
-        state->objective_vector_norm = max_val;
-    } else {
-        state->objective_vector_norm = sqrt(sum_of_squares);
-    }
-
-    sum_of_squares = 0.0;
-    max_val = 0.0;
-    val = 0.0;
-    for (int i = 0; i < n_cons; ++i)
-    {
-        double lower = working_problem->constraint_lower_bound[i];
-        double upper = working_problem->constraint_upper_bound[i];
-
-        if (params->optimality_norm == NORM_TYPE_L_INF) {
-            if (isfinite(lower) && (lower != upper)) {
-                val = fabs(lower);
-                if (val > max_val) max_val = val;
-            }
-            if (isfinite(upper)) {
-                val = fabs(upper);
-                if (val > max_val) max_val = val;
-            }
-        } else {
-            if (isfinite(lower) && (lower != upper)) {
-                sum_of_squares += lower * lower;
-            }
-            if (isfinite(upper)) {
-                sum_of_squares += upper * upper;
-            }
-        }
-    }
-    if (params->optimality_norm == NORM_TYPE_L_INF) {
-        state->constraint_bound_norm = max_val;
-    } else {
-        state->constraint_bound_norm = sqrt(sum_of_squares);
-    }
+    compute_objective_and_bound_norms(state, params);
 
     state->best_primal_dual_residual_gap = INFINITY;
     state->last_trial_fixed_point_error = INFINITY;

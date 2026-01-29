@@ -17,6 +17,7 @@ limitations under the License.
 #include "utils.h"
 #include <math.h>
 #include <random>
+#include <cub/cub.cuh>
 
 #ifndef CUPDLPX_VERSION
 #define CUPDLPX_VERSION "unknown"
@@ -64,6 +65,119 @@ void *safe_realloc(void *ptr, size_t new_size)
         exit(EXIT_FAILURE);
     }
     return tmp;
+}
+
+__global__ void compute_objective_norm_entries_kernel(
+    const double *__restrict__ objective_vector,
+    double *__restrict__ entries,
+    int n_vars,
+    int use_linf)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n_vars) return;
+
+    double v = objective_vector[i];
+    entries[i] = use_linf ? fabs(v) : (v * v);
+}
+
+__global__ void compute_bound_norm_entries_kernel(
+    const double *__restrict__ constraint_lower_bound,
+    const double *__restrict__ constraint_upper_bound,
+    double *__restrict__ entries,
+    int n_cons,
+    int use_linf)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n_cons) return;
+
+    double lower = constraint_lower_bound[i];
+    double upper = constraint_upper_bound[i];
+
+    if (use_linf)
+    {
+        double m = 0.0;
+        if (isfinite(lower) && (lower != upper)) m = fmax(m, fabs(lower));
+        if (isfinite(upper))                     m = fmax(m, fabs(upper));
+        entries[i] = m;
+    }
+    else
+    {
+        double s = 0.0;
+        if (isfinite(lower) && (lower != upper)) s += lower * lower;
+        if (isfinite(upper))                     s += upper * upper;
+        entries[i] = s;
+    }
+}
+
+void compute_objective_and_bound_norms(
+    pdhg_solver_state_t *state,
+    const pdhg_parameters_t *params)
+{
+    const int use_linf = (params->optimality_norm == NORM_TYPE_L_INF);
+
+    double *entries_vars = NULL;
+    double *entries_cons = NULL;
+    double *d_out = NULL;
+    CUDA_CHECK(cudaMalloc(&entries_vars, state->num_variables * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&entries_cons, state->num_constraints * sizeof(double)));
+    CUDA_CHECK(cudaMalloc(&d_out, sizeof(double)));
+
+    void *d_temp = NULL;
+    size_t temp_bytes = 0;
+
+    compute_objective_norm_entries_kernel<<<state->num_blocks_primal, THREADS_PER_BLOCK>>>(
+        state->objective_vector, entries_vars, state->num_variables, use_linf);
+    CUDA_CHECK(cudaGetLastError());
+
+    if (use_linf)
+    {
+        cub::DeviceReduce::Max(d_temp, temp_bytes, entries_vars, d_out, state->num_variables);
+        CUDA_CHECK(cudaMalloc(&d_temp, temp_bytes));
+        cub::DeviceReduce::Max(d_temp, temp_bytes, entries_vars, d_out, state->num_variables);
+    }
+    else
+    {
+        cub::DeviceReduce::Sum(d_temp, temp_bytes, entries_vars, d_out, state->num_variables);
+        CUDA_CHECK(cudaMalloc(&d_temp, temp_bytes));
+        cub::DeviceReduce::Sum(d_temp, temp_bytes, entries_vars, d_out, state->num_variables);
+    }
+    CUDA_CHECK(cudaGetLastError());
+
+    double obj_reduce = 0.0;
+    CUDA_CHECK(cudaMemcpy(&obj_reduce, d_out, sizeof(double), cudaMemcpyDeviceToHost));
+    state->objective_vector_norm = use_linf ? obj_reduce : sqrt(obj_reduce);
+
+    CUDA_CHECK(cudaFree(d_temp));
+    d_temp = NULL;
+    temp_bytes = 0;
+
+    compute_bound_norm_entries_kernel<<<state->num_blocks_dual, THREADS_PER_BLOCK>>>(
+        state->constraint_lower_bound, state->constraint_upper_bound,
+        entries_cons, state->num_constraints, use_linf);
+    CUDA_CHECK(cudaGetLastError());
+
+    if (use_linf)
+    {
+        cub::DeviceReduce::Max(d_temp, temp_bytes, entries_cons, d_out, state->num_constraints);
+        CUDA_CHECK(cudaMalloc(&d_temp, temp_bytes));
+        cub::DeviceReduce::Max(d_temp, temp_bytes, entries_cons, d_out, state->num_constraints);
+    }
+    else
+    {
+        cub::DeviceReduce::Sum(d_temp, temp_bytes, entries_cons, d_out, state->num_constraints);
+        CUDA_CHECK(cudaMalloc(&d_temp, temp_bytes));
+        cub::DeviceReduce::Sum(d_temp, temp_bytes, entries_cons, d_out, state->num_constraints);
+    }
+    CUDA_CHECK(cudaGetLastError());
+
+    double con_reduce = 0.0;
+    CUDA_CHECK(cudaMemcpy(&con_reduce, d_out, sizeof(double), cudaMemcpyDeviceToHost));
+    state->constraint_bound_norm = use_linf ? con_reduce : sqrt(con_reduce);
+
+    CUDA_CHECK(cudaFree(d_temp));
+    CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(entries_vars));
+    CUDA_CHECK(cudaFree(entries_cons));
 }
 
 double estimate_maximum_singular_value(cusparseHandle_t sparse_handle,
