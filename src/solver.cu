@@ -851,7 +851,9 @@ static void update_step_size_and_primal_weight(pdhg_solver_state_t *state,
         state->constraint_matrix_t, params->sv_max_iter, params->sv_tol);
     state->step_size = 0.998 / max_sv;
 
-    state->primal_weight = 1.0;
+    compute_objective_and_bound_norms(state, params);
+    state->primal_weight = (state->objective_vector_norm + 1.0) /
+                           (state->constraint_bound_norm + 1.0);
     state->best_primal_weight = state->primal_weight;
 
     state->primal_weight_error_sum = 0.0;
