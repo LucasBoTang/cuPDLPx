@@ -100,7 +100,7 @@ cupdlpx_presolve_info_t *pslp_presolve(const lp_problem_t *original_prob, const 
     {
         printf("  %-15s : %s\n", "status", get_presolve_status_str(status));
         printf("  %-15s : %.3g sec\n", "presolve time", info->presolve_time);
-        printf("  %-15s : %d rows, %d columns, %d nonzeros\n",
+        printf("  %-15s : %zu rows, %zu columns, %zu nonzeros\n",
                 "reduced problem",
                 info->presolver->reduced_prob->m,
                 info->presolver->reduced_prob->n,
