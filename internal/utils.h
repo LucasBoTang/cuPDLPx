@@ -97,7 +97,7 @@ extern "C"
         pdhg_solver_state_t *solver_state,
         const termination_criteria_t *criteria);
 
-    void print_initial_info(const pdhg_parameters_t *params, const lp_problem_t *problem);
+    void print_initial_info(const pdhg_parameters_t *params, lp_problem_t *problem);
 
     void pdhg_final_log(const cupdlpx_result_t *result, const pdhg_parameters_t *params);
 
@@ -117,10 +117,10 @@ extern "C"
                      int **row_ptr, int **col_ind, double **vals, int *nnz_out);
 
     int csc_to_csr(const matrix_desc_t *desc,
-                   int **row_ptr, int **col_ind, double **vals, int *nnz_out);
+                   int **row_ptr, int **col_ind, double **vals);
 
     int coo_to_csr(const matrix_desc_t *desc,
-                   int **row_ptr, int **col_ind, double **vals, int *nnz_out);
+                   int **row_ptr, int **col_ind, double **vals);
 
     void check_feas_polishing_termination_criteria(
         pdhg_solver_state_t *solver_state,

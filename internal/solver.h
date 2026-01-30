@@ -25,7 +25,7 @@ extern "C"
 
     cupdlpx_result_t *optimize(
         const pdhg_parameters_t *params,
-        const lp_problem_t *original_problem);
+        lp_problem_t *original_problem);
 
 #ifdef __cplusplus
 }

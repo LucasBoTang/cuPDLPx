@@ -270,6 +270,8 @@ static py::dict get_default_params_py()
     // presolve
     d["presolve"] = p.presolve;
 
+    d["matrix_zero_tol"] = p.matrix_zero_tol;
+
     return d;
 }
 
@@ -339,15 +341,16 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
 
     // presolve
     getb("presolve", p->presolve);
+
+    getf("matrix_zero_tol", p->matrix_zero_tol);
 }
 
 // view of matrix from Python
-static PyMatrixView get_matrix_from_python(py::object A, double zero_tol)
+static PyMatrixView get_matrix_from_python(py::object A)
 {
     // initialize output
     PyMatrixView out;
     auto &desc = out.desc;
-    desc.zero_tolerance = zero_tol;
     // get shape
     if (!py::hasattr(A, "shape"))
     {
@@ -441,14 +444,13 @@ static py::dict solve_once(
     py::object variable_upper_bound,      // ub (optional → inf)
     py::object constraint_lower_bound,    // l  (optional → -inf)
     py::object constraint_upper_bound,    // u  (optional → inf)
-    double zero_tolerance = 0.0,          // zero filter tolerance
     py::object params = py::none(),       // PDHG parameters (optional → default)
     py::object primal_start = py::none(), // warm start primal solution (optional)
     py::object dual_start = py::none()    // warm start dual solution (optional)
 )
 {
     // parse matrix
-    PyMatrixView view = get_matrix_from_python(A, zero_tolerance);
+    PyMatrixView view = get_matrix_from_python(A);
     const int m = view.desc.m;
     const int n = view.desc.n;
     // get vector pointers
@@ -570,7 +572,6 @@ PYBIND11_MODULE(_cupdlpx_core, m)
           py::arg("variable_upper_bound") = py::none(),
           py::arg("constraint_lower_bound") = py::none(),
           py::arg("constraint_upper_bound") = py::none(),
-          py::arg("zero_tolerance") = 0.0,
           py::arg("params") = py::none(),
           py::arg("primal_start") = py::none(),
           py::arg("dual_start") = py::none());

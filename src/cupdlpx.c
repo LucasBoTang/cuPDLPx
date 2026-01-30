@@ -50,14 +50,13 @@ lp_problem_t *create_lp_problem(const double *objective_c,
     {
         int *row_ptr = NULL, *col_ind = NULL;
         double *vals = NULL;
-        int nnz = 0;
-        if (csc_to_csr(A_desc, &row_ptr, &col_ind, &vals, &nnz) != 0)
+        if (csc_to_csr(A_desc, &row_ptr, &col_ind, &vals) != 0)
         {
             fprintf(stderr, "[interface] CSC->CSR failed.\n");
             free(prob);
             return NULL;
         }
-        prob->constraint_matrix_num_nonzeros = nnz;
+        prob->constraint_matrix_num_nonzeros = A_desc->data.csc.nnz;
         prob->constraint_matrix_row_pointers = row_ptr;
         prob->constraint_matrix_col_indices = col_ind;
         prob->constraint_matrix_values = vals;
@@ -68,14 +67,13 @@ lp_problem_t *create_lp_problem(const double *objective_c,
     {
         int *row_ptr = NULL, *col_ind = NULL;
         double *vals = NULL;
-        int nnz = 0;
-        if (coo_to_csr(A_desc, &row_ptr, &col_ind, &vals, &nnz) != 0)
+        if (coo_to_csr(A_desc, &row_ptr, &col_ind, &vals) != 0)
         {
             fprintf(stderr, "[interface] COO->CSR failed.\n");
             free(prob);
             return NULL;
         }
-        prob->constraint_matrix_num_nonzeros = nnz;
+        prob->constraint_matrix_num_nonzeros = A_desc->data.coo.nnz;
         prob->constraint_matrix_row_pointers = row_ptr;
         prob->constraint_matrix_col_indices = col_ind;
         prob->constraint_matrix_values = vals;
@@ -184,7 +182,7 @@ void set_start_values(lp_problem_t *prob, const double *primal,
     }
 }
 
-cupdlpx_result_t *solve_lp_problem(const lp_problem_t *prob,
+cupdlpx_result_t *solve_lp_problem(lp_problem_t *prob,
                                    const pdhg_parameters_t *params)
 {
     // argument checks

@@ -19,7 +19,7 @@ lp_problem_t *create_lp_problem(
 );
 
 cupdlpx_result_t* solve_lp_problem(
-    const lp_problem_t* prob,
+    lp_problem_t* prob,
     const pdhg_parameters_t* params    // NULL → use default parameters
 );
 ```
@@ -35,7 +35,7 @@ cupdlpx_result_t* solve_lp_problem(
 
 
 `solve_lp_problem` parameters:
-- `prob`: An LP problem built with `create_LP_problem`.
+- `prob`: An LP problem built with `create_LP_problem`. The solver may clean up the matrix (e.g., drop near-zero entries), so the struct must be mutable.
 - `params`: Solver parameters. If `NULL`, the solver will use default parameters.
 
 #### Example: Solving a Small LP
@@ -59,7 +59,6 @@ int main() {
     matrix_desc_t A_desc;
     A_desc.m = m; A_desc.n = n;
     A_desc.fmt = matrix_dense;
-    A_desc.zero_tolerance = 0.0;
     A_desc.data.dense.A = &A[0][0];
 
     // Objective coefficients

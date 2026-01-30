@@ -59,4 +59,5 @@ _PARAM_ALIAS = {
     "SVTol": "sv_tol",
     # presolve
     "Presolve": "presolve",
+    "MatrixZeroTol": "matrix_zero_tol",
 }

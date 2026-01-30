@@ -82,7 +82,7 @@ def test_iters_limit(atol):
     # turn off output
     model.setParams(OutputFlag=False)
     # set iteration limit
-    model.setParams(IterationLimit=25)
+    model.setParams(IterationLimit=200)
     # optimize
     model.optimize()
     # check status
@@ -90,4 +90,4 @@ def test_iters_limit(atol):
     assert model.Status == "ITERATION_LIMIT", f"Unexpected termination status: {model.Status}"
     # check solving time
     assert hasattr(model, "IterCount"), "Model.IterCount not exposed."
-    assert model.IterCount < 50, f"Internal iteration count exceeded limit a lot: {model.IterCount} seconds"
+    assert model.IterCount <= 200, f"Internal iteration count exceeded limit a lot: {model.IterCount} seconds"
