@@ -952,7 +952,7 @@ static void perform_restart(pdhg_solver_state_t *state,
         state->primal_weight_last_error = 0.0;
     }
 
-    double primal_dual_residual_gap = abs(
+    double primal_dual_residual_gap = fabs(
         log10(state->relative_dual_residual / state->relative_primal_residual));
     if (primal_dual_residual_gap < state->best_primal_dual_residual_gap)
     {
