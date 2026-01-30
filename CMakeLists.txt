@@ -107,7 +107,7 @@ if (CUPDLPX_BUILD_PYTHON)
     find_package(Python3 COMPONENTS Interpreter REQUIRED) # For versioning script and pybind11
 endif()
 
-set(PSLP_VERSION_TAG "v0.0.4")
+set(PSLP_VERSION_TAG "v0.0.5")
 
 FetchContent_Declare(
   pslp
