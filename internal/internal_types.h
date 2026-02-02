@@ -20,6 +20,7 @@ limitations under the License.
 #include <cublas_v2.h>
 #include <cusparse.h>
 #include <stdbool.h>
+#include <time.h>
 
 typedef struct
 {
