@@ -13,6 +13,10 @@ set(CUPDLPX_VERSION_PATCH 5)
 set(CUPDLPX_VERSION "${CUPDLPX_VERSION_MAJOR}.${CUPDLPX_VERSION_MINOR}.${CUPDLPX_VERSION_PATCH}")
 add_compile_definitions(CUPDLPX_VERSION="${CUPDLPX_VERSION}")
 
+if (WIN32)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 # C/C++ standards
@@ -31,7 +35,12 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
 endif()
 
 # Global Compile flags (corresponding to CFLAGS/NVCCFLAGS)
-add_compile_options(-O3 -Wall -Wextra -g)
+if(MSVC)
+    add_compile_options(/O2 /W4 /Zi)
+else()
+    add_compile_options(-O3 -Wall -Wextra -g)
+endif()
+
 if (NOT WIN32)
   add_compile_options(-fPIC)
 endif()
