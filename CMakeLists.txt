@@ -36,9 +36,13 @@ endif()
 
 # Global Compile flags (corresponding to CFLAGS/NVCCFLAGS)
 if(MSVC)
-    add_compile_options(/O2 /W4 /Zi)
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:C,CXX>:/O2>
+    $<$<COMPILE_LANGUAGE:C,CXX>:/W4>
+    $<$<COMPILE_LANGUAGE:C,CXX>:/Zi>
+  )
 else()
-    add_compile_options(-O3 -Wall -Wextra -g)
+  add_compile_options(-O3 -Wall -Wextra -g)
 endif()
 
 if (NOT WIN32)
