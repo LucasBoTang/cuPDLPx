@@ -204,6 +204,8 @@ void print_usage(const char *prog_name)
                     "Norm for optimality criteria: l2 or linf (default: l2).\n");
     fprintf(stderr, "      --no_presolve                   "
                     "Disable presolve (default: enabled).\n");
+    fprintf(stderr, "      --matrix_zero_tol <tolerance>.  "
+                    "Zero tolerance in constraint matrix.\n");
 }
 
 int main(int argc, char *argv[])
@@ -229,6 +231,7 @@ int main(int argc, char *argv[])
         {"eval_freq", required_argument, 0, 1013},
         {"opt_norm", required_argument, 0, 1014},
         {"no_presolve", no_argument, 0, 1015},
+        {"matrix_zero_tol", required_argument, 0, 1016},
         {0, 0, 0, 0}};
 
     int opt;
@@ -297,6 +300,9 @@ int main(int argc, char *argv[])
         case 1015: // --no_presolve
             params.presolve = false;
             break;
+        case 1016: // --matrix_zero_tol
+            params.matrix_zero_tol = atof(optarg);
+            break;
         case '?': // Unknown option
             return 1;
         }
@@ -329,7 +335,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    cupdlpx_result_t *result = optimize(&params, problem);
+    cupdlpx_result_t *result = solve_lp_problem(problem, &params);
 
     if (result == NULL)
     {

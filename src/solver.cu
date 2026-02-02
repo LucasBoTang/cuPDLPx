@@ -125,10 +125,10 @@ static void sync_inner_count_to_gpu(pdhg_solver_state_t *state);
 static void check_params_validity(const pdhg_parameters_t *params);
 
 cupdlpx_result_t *optimize(const pdhg_parameters_t *params,
-                           const lp_problem_t *original_problem)
+                           lp_problem_t *original_problem)
 {
-    print_initial_info(params, original_problem);
     check_params_validity(params);
+    print_initial_info(params, original_problem);
 
     cupdlpx_presolve_info_t *presolve_info = NULL;
     const lp_problem_t *working_problem = original_problem;
@@ -952,7 +952,7 @@ static void perform_restart(pdhg_solver_state_t *state,
         state->primal_weight_last_error = 0.0;
     }
 
-    double primal_dual_residual_gap = abs(
+    double primal_dual_residual_gap = fabs(
         log10(state->relative_dual_residual / state->relative_primal_residual));
     if (primal_dual_residual_gap < state->best_primal_dual_residual_gap)
     {

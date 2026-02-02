@@ -368,7 +368,6 @@ class Model:
             self.ub,
             self.constr_lb,
             self.constr_ub,
-            zero_tolerance=0.0,
             params=self._params,
             primal_start=self._primal_start,
             dual_start=self._dual_start
