@@ -520,16 +520,19 @@ static py::dict solve_once(
     const int m_out = res->num_constraints;
     py::array_t<double> x({n_out});
     py::array_t<double> y({m_out});
+    py::array_t<double> rc({n_out});
     {
-        auto xb = x.request(), yb = y.request();
+        auto xb = x.request(), yb = y.request(), rcb = rc.request();
         std::memcpy(xb.ptr, res->primal_solution, sizeof(double) * n_out);
         std::memcpy(yb.ptr, res->dual_solution, sizeof(double) * m_out);
+        std::memcpy(rcb.ptr, res->reduced_costs, sizeof(double) * n_out);
     }
     // build info dict
     py::dict info;
     // solution
     info["X"] = x;
     info["Pi"] = y;
+    info["RC"] = rc;
     // objectives and gaps
     info["PrimalObj"] = res->primal_objective_value;
     info["DualObj"] = res->dual_objective_value;

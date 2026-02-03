@@ -201,6 +201,18 @@ void pslp_postsolve(const cupdlpx_presolve_info_t *info,
     memcpy(result->primal_solution, info->presolver->sol->x, original_prob->num_variables * sizeof(double));
     memcpy(result->dual_solution, info->presolver->sol->y, original_prob->num_constraints * sizeof(double));
     memcpy(result->reduced_cost, info->presolver->sol->z, original_prob->num_variables * sizeof(double));
+    // TODO: this can be removed if PSLP implements it.
+    for (int i=0; i <original_prob->num_variables; i++)
+    {
+        if (!isfinite(original_prob->variable_lower_bound[i]))
+        {
+            result->reduced_cost[i] = fmin(result->reduced_cost[i], 0.0);
+        }
+        if (!isfinite(original_prob->variable_upper_bound[i]))
+        {
+            result->reduced_cost[i] = fmax(result->reduced_cost[i], 0.0);
+        }
+    }
     result->presolve_time = info->presolve_time;
     if (info->presolver->reduced_prob->n == 0)
     {

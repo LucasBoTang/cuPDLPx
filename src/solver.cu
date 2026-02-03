@@ -56,7 +56,6 @@ __global__ void compute_delta_solution_kernel(
     const double *__restrict__ initial_dual,
     const double *__restrict__ pdhg_dual, double *__restrict__ delta_dual,
     int n_vars, int n_cons);
-static void rescale_solution(pdhg_solver_state_t *state);
 static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state, const lp_problem_t *original_problem);
 static void perform_restart(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
 static void initialize_step_size_and_primal_weight(pdhg_solver_state_t *state, const pdhg_parameters_t *params);
@@ -290,12 +289,24 @@ __global__ void compute_and_rescale_reduced_cost_kernel(
     const double *__restrict__ variable_rescaling,
     const double objective_vector_rescaling,
     const double constraint_bound_rescaling,
+    const double *__restrict__ variable_lower_bound,
+    const double *__restrict__ variable_upper_bound,
     int n_vars)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < n_vars)
     {
-        reduced_cost[i] = (objective[i] - dual_product[i]) * variable_rescaling[i] / objective_vector_rescaling;
+        double rc = (objective[i] - dual_product[i]) * variable_rescaling[i] / objective_vector_rescaling;
+
+        if (!isfinite(variable_lower_bound[i]))
+        {
+            rc = fmin(rc, 0.0);
+        }
+        if (!isfinite(variable_upper_bound[i]))
+        {
+            rc = fmax(rc, 0.0);
+        }
+        reduced_cost[i] = rc;
     }
 }
 
@@ -902,15 +913,6 @@ static void compute_next_dual_solution(pdhg_solver_state_t *state,const int k_of
     }
 }
 
-static void rescale_solution(pdhg_solver_state_t *state)
-{
-    rescale_solution_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK, 0, state->stream>>>(
-        state->pdhg_primal_solution, state->pdhg_dual_solution,
-        state->variable_rescaling, state->constraint_rescaling,
-        state->objective_vector_rescaling, state->constraint_bound_rescaling,
-        state->num_variables, state->num_constraints);
-}
-
 static void perform_restart(pdhg_solver_state_t *state,
                             const pdhg_parameters_t *params)
 {
@@ -1202,9 +1204,15 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state, co
         state->variable_rescaling,
         state->objective_vector_rescaling,
         state->constraint_bound_rescaling,
+        state->variable_lower_bound,
+        state->variable_upper_bound,
         state->num_variables);
 
-    rescale_solution(state);
+    rescale_solution_kernel<<<state->num_blocks_primal_dual, THREADS_PER_BLOCK, 0, state->stream>>>(
+        state->pdhg_primal_solution, state->pdhg_dual_solution,
+        state->variable_rescaling, state->constraint_rescaling,
+        state->objective_vector_rescaling, state->constraint_bound_rescaling,
+        state->num_variables, state->num_constraints);
 
     results->primal_solution =
         (double *)safe_malloc(state->num_variables * sizeof(double));

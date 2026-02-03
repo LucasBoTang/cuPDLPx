@@ -128,6 +128,7 @@ class Model:
         # initialize solution attributes
         self._x: Optional[np.ndarray] = None # primal solution
         self._y: Optional[np.ndarray] = None # dual solution
+        self._rc: Optional[np.ndarray] = None # reduced costs
         self._objval: Optional[float] = None # objective value
         self._dualobj: Optional[float] = None # dual objective value
         self._gap: Optional[float] = None # primal-dual gap
@@ -375,6 +376,7 @@ class Model:
         # solutions
         self._x = np.asarray(info.get("X")) if info.get("X") is not None else None
         self._y = np.asarray(info.get("Pi")) if info.get("Pi") is not None else None
+        self._rc = np.asarray(info.get("RC")) if info.get("RC") is not None else None
         # objectives & gaps
         primal_obj_eff = info.get("PrimalObj")
         dual_obj_eff   = info.get("DualObj")
@@ -403,7 +405,7 @@ class Model:
         """
         Clear cached solution attributes.
         """
-        self._x = self._y = None
+        self._x = self._y = self._rc = None
         self._objval = self._dualobj = None
         self._gap = self._rel_gap = None
         self._status = None
@@ -422,6 +424,10 @@ class Model:
     @property
     def Pi(self) -> Optional[np.ndarray]:
         return self._y
+    
+    @property
+    def RC(self) -> Optional[np.ndarray]:
+        return self._rc
 
     @property
     def ObjVal(self) -> Optional[float]:
