@@ -81,6 +81,8 @@ find_package(CUDAToolkit REQUIRED)
 include(FetchContent)
 
 # 1. ZLIB Configuration
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 find_package(ZLIB QUIET)
 if(NOT ZLIB_FOUND)
     FetchContent_Declare(
@@ -88,19 +90,21 @@ if(NOT ZLIB_FOUND)
         GIT_REPOSITORY https://github.com/madler/zlib.git
         GIT_TAG        v1.3
     )
-    FetchContent_MakeAvailable(zlib)
+
+    FetchContent_GetProperties(zlib)
+    if(NOT zlib_POPULATED)
+        FetchContent_Populate(zlib)
+
+        file(WRITE "${zlib_SOURCE_DIR}/zlib.pc.cmakein" "") 
+        add_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif()
 
     if(TARGET zlibstatic)
-        target_compile_definitions(zlibstatic INTERFACE 
-            $<$<PLATFORM_ID:Windows>:ZLIB_STATIC_LINKING>
-        )
-        
-        if(TARGET example)
-            target_link_libraries(example PRIVATE zlibstatic)
-            target_compile_definitions(example PRIVATE ZLIB_STATIC_LINKING)
-        endif()
-
         add_library(ZLIB::ZLIB ALIAS zlibstatic)
+        target_include_directories(zlibstatic INTERFACE 
+            $<BUILD_INTERFACE:${zlib_SOURCE_DIR}> 
+            $<BUILD_INTERFACE:${zlib_BINARY_DIR}>
+        )
     endif()
 endif()
 
