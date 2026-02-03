@@ -46,8 +46,10 @@ if(MSVC)
         $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler "/O2 /W4 /Zi">
     )
     target_compile_definitions(cupdlpx_compile_flags INTERFACE 
-        _CRT_SECURE_NO_WARNINGS 
+        _CRT_SECURE_NO_WARNINGS
+        _CRT_NONSTDC_NO_DEPRECATE
         strtok_r=strtok_s
+        strdup=_strdup
     )
 else()
     target_compile_options(cupdlpx_compile_flags INTERFACE -O3 -Wall -Wextra -g)
@@ -81,21 +83,24 @@ include(FetchContent)
 # 1. ZLIB Configuration
 find_package(ZLIB QUIET)
 if(NOT ZLIB_FOUND)
-    message(STATUS "ZLIB not found. Fetching from source...")
     FetchContent_Declare(
         zlib
         GIT_REPOSITORY https://github.com/madler/zlib.git
         GIT_TAG        v1.3
     )
     FetchContent_MakeAvailable(zlib)
-    if(NOT TARGET ZLIB::ZLIB)
-        if(TARGET zlibstatic)
-            add_library(ZLIB::ZLIB ALIAS zlibstatic)
-            target_include_directories(zlibstatic INTERFACE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
-        else()
-            add_library(ZLIB::ZLIB ALIAS zlib)
-            target_include_directories(zlib INTERFACE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+
+    if(TARGET zlibstatic)
+        target_compile_definitions(zlibstatic INTERFACE 
+            $<$<PLATFORM_ID:Windows>:ZLIB_STATIC_LINKING>
+        )
+        
+        if(TARGET example)
+            target_link_libraries(example PRIVATE zlibstatic)
+            target_compile_definitions(example PRIVATE ZLIB_STATIC_LINKING)
         endif()
+
+        add_library(ZLIB::ZLIB ALIAS zlibstatic)
     endif()
 endif()
 
