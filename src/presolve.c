@@ -17,16 +17,16 @@ const char *get_presolve_status_str(enum PresolveStatus_ status)
 {
     switch (status)
     {
-    case UNCHANGED:
-        return "UNCHANGED";
-    case REDUCED:
-        return "REDUCED";
-    case INFEASIBLE:
-        return "INFEASIBLE";
-    case UNBNDORINFEAS:
-        return "INFEASIBLE_OR_UNBOUNDED";
-    default:
-        return "UNKNOWN_STATUS";
+        case UNCHANGED:
+            return "UNCHANGED";
+        case REDUCED:
+            return "REDUCED";
+        case INFEASIBLE:
+            return "INFEASIBLE";
+        case UNBNDORINFEAS:
+            return "INFEASIBLE_OR_UNBOUNDED";
+        default:
+            return "UNKNOWN_STATUS";
     }
 }
 
@@ -77,19 +77,18 @@ cupdlpx_presolve_info_t *pslp_presolve(const lp_problem_t *original_prob, const 
     info->settings->verbose = false;
 
     // 2. Init Presolver
-    info->presolver = new_presolver(
-        original_prob->constraint_matrix_values,
-        original_prob->constraint_matrix_col_indices,
-        original_prob->constraint_matrix_row_pointers,
-        original_prob->num_constraints,
-        original_prob->num_variables,
-        original_prob->constraint_matrix_num_nonzeros,
-        original_prob->constraint_lower_bound,
-        original_prob->constraint_upper_bound,
-        original_prob->variable_lower_bound,
-        original_prob->variable_upper_bound,
-        original_prob->objective_vector,
-        info->settings);
+    info->presolver = new_presolver(original_prob->constraint_matrix_values,
+                                    original_prob->constraint_matrix_col_indices,
+                                    original_prob->constraint_matrix_row_pointers,
+                                    original_prob->num_constraints,
+                                    original_prob->num_variables,
+                                    original_prob->constraint_matrix_num_nonzeros,
+                                    original_prob->constraint_lower_bound,
+                                    original_prob->constraint_upper_bound,
+                                    original_prob->variable_lower_bound,
+                                    original_prob->variable_upper_bound,
+                                    original_prob->objective_vector,
+                                    info->settings);
 
     // 3. Run Presolve
     PresolveStatus status = run_presolver(info->presolver);
@@ -101,10 +100,10 @@ cupdlpx_presolve_info_t *pslp_presolve(const lp_problem_t *original_prob, const 
         printf("  %-15s : %s\n", "status", get_presolve_status_str(status));
         printf("  %-15s : %.3g sec\n", "presolve time", info->presolve_time);
         printf("  %-15s : %d rows, %d columns, %d nonzeros\n",
-                "reduced problem",
-                info->presolver->reduced_prob->m,
-                info->presolver->reduced_prob->n,
-                info->presolver->reduced_prob->nnz);
+               "reduced problem",
+               info->presolver->reduced_prob->m,
+               info->presolver->reduced_prob->n,
+               info->presolver->reduced_prob->nnz);
     }
 
     if (status & INFEASIBLE || status & UNBNDORINFEAS || info->presolver->reduced_prob->n == 0)
@@ -180,14 +179,9 @@ cupdlpx_result_t *create_result_from_presolve(const cupdlpx_presolve_info_t *inf
     return result;
 }
 
-void pslp_postsolve(const cupdlpx_presolve_info_t *info,
-                    cupdlpx_result_t *result,
-                    const lp_problem_t *original_prob)
+void pslp_postsolve(const cupdlpx_presolve_info_t *info, cupdlpx_result_t *result, const lp_problem_t *original_prob)
 {
-    postsolve(info->presolver,
-              result->primal_solution,
-              result->dual_solution,
-              result->reduced_cost);
+    postsolve(info->presolver, result->primal_solution, result->dual_solution, result->reduced_cost);
 
     result->num_reduced_variables = info->presolver->reduced_prob->n;
     result->num_reduced_constraints = info->presolver->reduced_prob->m;
@@ -202,7 +196,7 @@ void pslp_postsolve(const cupdlpx_presolve_info_t *info,
     memcpy(result->dual_solution, info->presolver->sol->y, original_prob->num_constraints * sizeof(double));
     memcpy(result->reduced_cost, info->presolver->sol->z, original_prob->num_variables * sizeof(double));
     // TODO: this can be removed if PSLP implements it.
-    for (int i=0; i <original_prob->num_variables; i++)
+    for (int i = 0; i < original_prob->num_variables; i++)
     {
         if (!isfinite(original_prob->variable_lower_bound[i]))
         {

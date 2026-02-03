@@ -89,8 +89,8 @@ static const double *get_arr_ptr_f64_or_null(py::object obj, const char *name, M
 }
 
 // get int32 pointer to contiguous numpy array
-static const int32_t *get_index_ptr_i32(py::object obj, const char *name,
-                                        MatrixKeepalive &keep, std::vector<int32_t> &tmp_vec)
+static const int32_t *
+get_index_ptr_i32(py::object obj, const char *name, MatrixKeepalive &keep, std::vector<int32_t> &tmp_vec)
 {
     // nullptr if obj is None
     if (!obj || obj.is_none())
@@ -126,8 +126,9 @@ static const int32_t *get_index_ptr_i32(py::object obj, const char *name,
             int64_t v = p[i];
             if (v < 0 || v > I32_MAX)
             {
-                throw std::overflow_error(std::string(name) + " has value out of int32 range; "
-                                                              "backend currently supports only 32-bit indices.");
+                throw std::overflow_error(std::string(name) +
+                                          " has value out of int32 range; "
+                                          "backend currently supports only 32-bit indices.");
             }
             tmp_vec[static_cast<size_t>(i)] = static_cast<int32_t>(v);
         }
@@ -138,16 +139,21 @@ static const int32_t *get_index_ptr_i32(py::object obj, const char *name,
 }
 
 // helper function to convert norm string to enum
-static norm_type_t parse_norm_string(const std::string& s)
+static norm_type_t parse_norm_string(const std::string &s)
 {
     std::string lower = s;
     std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-    
-    if (lower == "l2") {
+
+    if (lower == "l2")
+    {
         return NORM_TYPE_L2;
-    } else if (lower == "linf") {
+    }
+    else if (lower == "linf")
+    {
         return NORM_TYPE_L_INF;
-    } else {
+    }
+    else
+    {
         throw std::invalid_argument("Unknown norm type: " + s + ". Use 'l2' or 'linf'.");
     }
 }
@@ -170,7 +176,8 @@ static void ensure_len_or_null(py::object obj, const char *name, int expect_len)
     // check length
     if ((int)arr.size() != expect_len)
     {
-        throw std::invalid_argument(std::string(name) + " length mismatch: expect " + std::to_string(expect_len) + ", got " + std::to_string((int)arr.size()));
+        throw std::invalid_argument(std::string(name) + " length mismatch: expect " + std::to_string(expect_len) +
+                                    ", got " + std::to_string((int)arr.size()));
     }
 }
 
@@ -179,24 +186,24 @@ static const char *status_to_str(termination_reason_t r)
 {
     switch (r)
     {
-    case TERMINATION_REASON_OPTIMAL:
-        return "OPTIMAL";
-    case TERMINATION_REASON_PRIMAL_INFEASIBLE:
-        return "PRIMAL_INFEASIBLE";
-    case TERMINATION_REASON_DUAL_INFEASIBLE:
-        return "DUAL_INFEASIBLE";
-    case TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED:
-        return "INFEASIBLE_OR_UNBOUNDED";
-    case TERMINATION_REASON_TIME_LIMIT:
-        return "TIME_LIMIT";
-    case TERMINATION_REASON_ITERATION_LIMIT:
-        return "ITERATION_LIMIT";
-    case TERMINATION_REASON_FEAS_POLISH_SUCCESS:
-        return "FEAS_POLISH_SUCCESS";
-    case TERMINATION_REASON_UNSPECIFIED:
-        return "UNSPECIFIED";
-    default:
-        return "UNKNOWN";
+        case TERMINATION_REASON_OPTIMAL:
+            return "OPTIMAL";
+        case TERMINATION_REASON_PRIMAL_INFEASIBLE:
+            return "PRIMAL_INFEASIBLE";
+        case TERMINATION_REASON_DUAL_INFEASIBLE:
+            return "DUAL_INFEASIBLE";
+        case TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED:
+            return "INFEASIBLE_OR_UNBOUNDED";
+        case TERMINATION_REASON_TIME_LIMIT:
+            return "TIME_LIMIT";
+        case TERMINATION_REASON_ITERATION_LIMIT:
+            return "ITERATION_LIMIT";
+        case TERMINATION_REASON_FEAS_POLISH_SUCCESS:
+            return "FEAS_POLISH_SUCCESS";
+        case TERMINATION_REASON_UNSPECIFIED:
+            return "UNSPECIFIED";
+        default:
+            return "UNKNOWN";
     }
 }
 
@@ -205,21 +212,21 @@ static int status_to_code(termination_reason_t r)
 {
     switch (r)
     {
-    case TERMINATION_REASON_OPTIMAL:
-        return 0;
-    case TERMINATION_REASON_PRIMAL_INFEASIBLE:
-        return 1;
-    case TERMINATION_REASON_DUAL_INFEASIBLE:
-        return 2;
-    case TERMINATION_REASON_TIME_LIMIT:
-        return 3;
-    case TERMINATION_REASON_ITERATION_LIMIT:
-        return 4;
-    case TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED:
-        return 5;
-    case TERMINATION_REASON_UNSPECIFIED:
-    default:
-        return -1;
+        case TERMINATION_REASON_OPTIMAL:
+            return 0;
+        case TERMINATION_REASON_PRIMAL_INFEASIBLE:
+            return 1;
+        case TERMINATION_REASON_DUAL_INFEASIBLE:
+            return 2;
+        case TERMINATION_REASON_TIME_LIMIT:
+            return 3;
+        case TERMINATION_REASON_ITERATION_LIMIT:
+            return 4;
+        case TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED:
+            return 5;
+        case TERMINATION_REASON_UNSPECIFIED:
+        default:
+            return -1;
     }
 }
 
@@ -283,20 +290,32 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
     py::dict d = params_obj.cast<py::dict>();
 
     auto getf = [&](const char *k, double &tgt)
-    { if (d.contains(k)) tgt = py::cast<double>(d[k]); };
+    {
+        if (d.contains(k))
+            tgt = py::cast<double>(d[k]);
+    };
     auto geti = [&](const char *k, int &tgt)
-    { if (d.contains(k)) tgt = py::cast<int>(d[k]); };
+    {
+        if (d.contains(k))
+            tgt = py::cast<int>(d[k]);
+    };
     auto getb = [&](const char *k, bool &tgt)
-    { if (d.contains(k)) tgt = py::cast<bool>(d[k]); };
+    {
+        if (d.contains(k))
+            tgt = py::cast<bool>(d[k]);
+    };
     auto get_norm = [&](const char *k, norm_type_t &tgt)
-    { 
-        if (d.contains(k)) {
+    {
+        if (d.contains(k))
+        {
             py::object val = d[k];
-            if (py::isinstance<py::str>(val)) {
+            if (py::isinstance<py::str>(val))
+            {
                 std::string sval = py::cast<std::string>(val);
                 tgt = parse_norm_string(sval);
             }
-            else {
+            else
+            {
                 throw std::invalid_argument("optimality_norm must be a string ('l2'/'linf')");
             }
         }
@@ -436,17 +455,16 @@ static PyMatrixView get_matrix_from_python(py::object A)
 }
 
 // solve function
-static py::dict solve_once(
-    py::object A,
-    py::object objective_vector,          // c
-    py::object objective_constant,        // c0 (optional → 0)
-    py::object variable_lower_bound,      // lb (optional → 0)
-    py::object variable_upper_bound,      // ub (optional → inf)
-    py::object constraint_lower_bound,    // l  (optional → -inf)
-    py::object constraint_upper_bound,    // u  (optional → inf)
-    py::object params = py::none(),       // PDHG parameters (optional → default)
-    py::object primal_start = py::none(), // warm start primal solution (optional)
-    py::object dual_start = py::none()    // warm start dual solution (optional)
+static py::dict solve_once(py::object A,
+                           py::object objective_vector,          // c
+                           py::object objective_constant,        // c0 (optional → 0)
+                           py::object variable_lower_bound,      // lb (optional → 0)
+                           py::object variable_upper_bound,      // ub (optional → inf)
+                           py::object constraint_lower_bound,    // l  (optional → -inf)
+                           py::object constraint_upper_bound,    // u  (optional → inf)
+                           py::object params = py::none(),       // PDHG parameters (optional → default)
+                           py::object primal_start = py::none(), // warm start primal solution (optional)
+                           py::object dual_start = py::none()    // warm start dual solution (optional)
 )
 {
     // parse matrix
@@ -564,10 +582,10 @@ PYBIND11_MODULE(_cupdlpx_core, m)
 {
     m.doc() = "cupdlpx core bindings (auto-detect dense/CSR/CSC/COO; initialize default params here)";
 
-    m.def("get_default_params", &get_default_params_py,
-          "Return default PDHG parameters as a dict");
+    m.def("get_default_params", &get_default_params_py, "Return default PDHG parameters as a dict");
 
-    m.def("solve_once", &solve_once,
+    m.def("solve_once",
+          &solve_once,
           py::arg("A"),
           py::arg("objective_vector"),
           py::arg("objective_constant") = py::none(),

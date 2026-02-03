@@ -25,8 +25,10 @@ limitations under the License.
 // create an lp_problem_t from a matrix
 lp_problem_t *create_lp_problem(const double *objective_c,
                                 const matrix_desc_t *A_desc,
-                                const double *con_lb, const double *con_ub,
-                                const double *var_lb, const double *var_ub,
+                                const double *con_lb,
+                                const double *con_ub,
+                                const double *var_lb,
+                                const double *var_ub,
                                 const double *objective_constant)
 {
     lp_problem_t *prob = (lp_problem_t *)safe_malloc(sizeof(lp_problem_t));
@@ -39,82 +41,75 @@ lp_problem_t *create_lp_problem(const double *objective_c,
     // handle matrix by format
     switch (A_desc->fmt)
     {
-    case matrix_dense:
-        dense_to_csr(A_desc, &prob->constraint_matrix_row_pointers,
-                     &prob->constraint_matrix_col_indices,
-                     &prob->constraint_matrix_values,
-                     &prob->constraint_matrix_num_nonzeros);
-        break;
+        case matrix_dense:
+            dense_to_csr(A_desc,
+                         &prob->constraint_matrix_row_pointers,
+                         &prob->constraint_matrix_col_indices,
+                         &prob->constraint_matrix_values,
+                         &prob->constraint_matrix_num_nonzeros);
+            break;
 
-    case matrix_csc:
-    {
-        int *row_ptr = NULL, *col_ind = NULL;
-        double *vals = NULL;
-        if (csc_to_csr(A_desc, &row_ptr, &col_ind, &vals) != 0)
+        case matrix_csc:
         {
-            fprintf(stderr, "[interface] CSC->CSR failed.\n");
+            int *row_ptr = NULL, *col_ind = NULL;
+            double *vals = NULL;
+            if (csc_to_csr(A_desc, &row_ptr, &col_ind, &vals) != 0)
+            {
+                fprintf(stderr, "[interface] CSC->CSR failed.\n");
+                free(prob);
+                return NULL;
+            }
+            prob->constraint_matrix_num_nonzeros = A_desc->data.csc.nnz;
+            prob->constraint_matrix_row_pointers = row_ptr;
+            prob->constraint_matrix_col_indices = col_ind;
+            prob->constraint_matrix_values = vals;
+            break;
+        }
+
+        case matrix_coo:
+        {
+            int *row_ptr = NULL, *col_ind = NULL;
+            double *vals = NULL;
+            if (coo_to_csr(A_desc, &row_ptr, &col_ind, &vals) != 0)
+            {
+                fprintf(stderr, "[interface] COO->CSR failed.\n");
+                free(prob);
+                return NULL;
+            }
+            prob->constraint_matrix_num_nonzeros = A_desc->data.coo.nnz;
+            prob->constraint_matrix_row_pointers = row_ptr;
+            prob->constraint_matrix_col_indices = col_ind;
+            prob->constraint_matrix_values = vals;
+            break;
+        }
+
+        case matrix_csr:
+            prob->constraint_matrix_num_nonzeros = A_desc->data.csr.nnz;
+            prob->constraint_matrix_row_pointers = (int *)safe_malloc((size_t)(A_desc->m + 1) * sizeof(int));
+            prob->constraint_matrix_col_indices = (int *)safe_malloc((size_t)A_desc->data.csr.nnz * sizeof(int));
+            prob->constraint_matrix_values = (double *)safe_malloc((size_t)A_desc->data.csr.nnz * sizeof(double));
+            memcpy(
+                prob->constraint_matrix_row_pointers, A_desc->data.csr.row_ptr, (size_t)(A_desc->m + 1) * sizeof(int));
+            memcpy(prob->constraint_matrix_col_indices,
+                   A_desc->data.csr.col_ind,
+                   (size_t)A_desc->data.csr.nnz * sizeof(int));
+            memcpy(
+                prob->constraint_matrix_values, A_desc->data.csr.vals, (size_t)A_desc->data.csr.nnz * sizeof(double));
+            break;
+
+        default:
+            fprintf(stderr, "[interface] make_problem_from_matrix: unsupported matrix format %d.\n", A_desc->fmt);
             free(prob);
             return NULL;
-        }
-        prob->constraint_matrix_num_nonzeros = A_desc->data.csc.nnz;
-        prob->constraint_matrix_row_pointers = row_ptr;
-        prob->constraint_matrix_col_indices = col_ind;
-        prob->constraint_matrix_values = vals;
-        break;
-    }
-
-    case matrix_coo:
-    {
-        int *row_ptr = NULL, *col_ind = NULL;
-        double *vals = NULL;
-        if (coo_to_csr(A_desc, &row_ptr, &col_ind, &vals) != 0)
-        {
-            fprintf(stderr, "[interface] COO->CSR failed.\n");
-            free(prob);
-            return NULL;
-        }
-        prob->constraint_matrix_num_nonzeros = A_desc->data.coo.nnz;
-        prob->constraint_matrix_row_pointers = row_ptr;
-        prob->constraint_matrix_col_indices = col_ind;
-        prob->constraint_matrix_values = vals;
-        break;
-    }
-
-    case matrix_csr:
-        prob->constraint_matrix_num_nonzeros = A_desc->data.csr.nnz;
-        prob->constraint_matrix_row_pointers =
-            (int *)safe_malloc((size_t)(A_desc->m + 1) * sizeof(int));
-        prob->constraint_matrix_col_indices =
-            (int *)safe_malloc((size_t)A_desc->data.csr.nnz * sizeof(int));
-        prob->constraint_matrix_values =
-            (double *)safe_malloc((size_t)A_desc->data.csr.nnz * sizeof(double));
-        memcpy(prob->constraint_matrix_row_pointers, A_desc->data.csr.row_ptr,
-               (size_t)(A_desc->m + 1) * sizeof(int));
-        memcpy(prob->constraint_matrix_col_indices, A_desc->data.csr.col_ind,
-               (size_t)A_desc->data.csr.nnz * sizeof(int));
-        memcpy(prob->constraint_matrix_values, A_desc->data.csr.vals,
-               (size_t)A_desc->data.csr.nnz * sizeof(double));
-        break;
-
-    default:
-        fprintf(
-            stderr,
-            "[interface] make_problem_from_matrix: unsupported matrix format %d.\n",
-            A_desc->fmt);
-        free(prob);
-        return NULL;
     }
 
     // default fill values
     prob->objective_constant = objective_constant ? *objective_constant : 0.0;
     fill_or_copy(&prob->objective_vector, prob->num_variables, objective_c, 0.0);
     fill_or_copy(&prob->variable_lower_bound, prob->num_variables, var_lb, -INFINITY);
-    fill_or_copy(&prob->variable_upper_bound, prob->num_variables, var_ub,
-                 INFINITY);
-    fill_or_copy(&prob->constraint_lower_bound, prob->num_constraints, con_lb,
-                 -INFINITY);
-    fill_or_copy(&prob->constraint_upper_bound, prob->num_constraints, con_ub,
-                 INFINITY);
+    fill_or_copy(&prob->variable_upper_bound, prob->num_variables, var_ub, INFINITY);
+    fill_or_copy(&prob->constraint_lower_bound, prob->num_constraints, con_lb, -INFINITY);
+    fill_or_copy(&prob->constraint_upper_bound, prob->num_constraints, con_ub, INFINITY);
 
     return prob;
 }
@@ -149,8 +144,7 @@ void lp_problem_free(lp_problem_t *prob)
     free(prob);
 }
 
-void set_start_values(lp_problem_t *prob, const double *primal,
-                      const double *dual)
+void set_start_values(lp_problem_t *prob, const double *primal, const double *dual)
 {
     if (!prob)
         return;
@@ -182,8 +176,7 @@ void set_start_values(lp_problem_t *prob, const double *primal,
     }
 }
 
-cupdlpx_result_t *solve_lp_problem(lp_problem_t *prob,
-                                   const pdhg_parameters_t *params)
+cupdlpx_result_t *solve_lp_problem(lp_problem_t *prob, const pdhg_parameters_t *params)
 {
     // argument checks
     if (!prob)
