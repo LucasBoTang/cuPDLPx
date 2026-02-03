@@ -41,7 +41,10 @@ endif()
 add_library(cupdlpx_compile_flags INTERFACE)
 
 if(MSVC)
-    target_compile_options(cupdlpx_compile_flags INTERFACE /O2 /W4 /Zi)
+    target_compile_options(cupdlpx_compile_flags INTERFACE
+        $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:/O2 /W4 /Zi>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler "/O2 /W4 /Zi">
+    )
     target_compile_definitions(cupdlpx_compile_flags INTERFACE 
         _CRT_SECURE_NO_WARNINGS 
         strtok_r=strtok_s
