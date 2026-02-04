@@ -23,9 +23,7 @@ extern "C"
 {
 #endif
 
-    rescale_info_t *rescale_problem(
-        const pdhg_parameters_t *params,
-        pdhg_solver_state_t *state);
+    rescale_info_t *rescale_problem(const pdhg_parameters_t *params, pdhg_solver_state_t *state);
 
 #ifdef __cplusplus
 }

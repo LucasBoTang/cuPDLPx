@@ -74,6 +74,7 @@ print("Status:", m.Status)
 print("Objective:", m.ObjVal)
 print("Primal solution:", m.X)
 print("Dual solution:", m.Pi)
+print("Reduced cost:", m.RC)
 ```
 
 ## Modeling
@@ -190,6 +191,7 @@ After calling `m.optimize()`, the solver stores results in a set of read-only at
 | `RelGap` | float | Relative primal-dual gap. |
 | `X` | numpy.ndarray | Primal solution vector \(x\). May be `None` if no feasible solution was found. |
 | `Pi` | numpy.ndarray | Dual solution vector (Lagrange multipliers). |
+| `RC` | numpy.ndarray | Reduced Cost vector. |
 | `IterCount` | int | Number of iterations performed. |
 | `Runtime` | float | Total wall-clock runtime in seconds. |
 | `RescalingTime` | float | Time spent on preprocessing and rescaling (seconds). |
@@ -214,6 +216,7 @@ print("Iterations:", m.IterCount, " Runtime (s):", m.Runtime)
 # Access solutions
 print("Primal solution:", m.X)
 print("Dual solution:", m.Pi)
+print("Reduced cost:", m.RC)
 
 # Check residuals
 print("Primal residual:", m.RelPrimalResidual)
