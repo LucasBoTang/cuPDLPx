@@ -812,13 +812,13 @@ void compute_residual(pdhg_solver_state_t *state, norm_type_t optimality_norm)
                                        state->primal_residual, 1, 
                                        &state->absolute_primal_residual));
     }
+    state->absolute_primal_residual /= state->constraint_bound_rescaling;
 
 
     if (optimality_norm == NORM_TYPE_L_INF) {
         state->absolute_dual_residual = get_vector_inf_norm(state->blas_handle, 
                                         state->num_variables, state->dual_residual);
     } else {
-        state->absolute_primal_residual /= state->constraint_bound_rescaling;
         CUBLAS_CHECK(cublasDnrm2_v2_64(state->blas_handle, state->num_variables,
                                        state->dual_residual, 1,
                                        &state->absolute_dual_residual));
