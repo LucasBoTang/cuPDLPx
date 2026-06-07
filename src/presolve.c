@@ -39,6 +39,7 @@ lp_problem_t *convert_pslp_to_cupdlpx(PresolvedProblem *reduced_prob, const lp_p
     cupdlpx_prob->dual_start = NULL;
 
     cupdlpx_prob->objective_constant = original_prob->objective_constant + reduced_prob->obj_offset;
+    cupdlpx_prob->objective_sense = original_prob->objective_sense;
     cupdlpx_prob->objective_vector = reduced_prob->c;
 
     cupdlpx_prob->constraint_lower_bound = reduced_prob->lhs;
@@ -216,8 +217,9 @@ void pslp_postsolve(const cupdlpx_presolve_info_t *info, cupdlpx_result_t *resul
             obj += original_prob->objective_vector[i] * result->primal_solution[i];
         }
         obj += original_prob->objective_constant;
-        result->primal_objective_value = obj;
-        result->dual_objective_value = obj;
+        double objective_sign = (original_prob->objective_sense == OBJECTIVE_SENSE_MAXIMIZE) ? -1.0 : 1.0;
+        result->primal_objective_value = objective_sign * obj;
+        result->dual_objective_value = objective_sign * obj;
     }
     // if (info->presolver->stats != NULL) {
     //     result->presolve_stats = *(info->presolver->stats);

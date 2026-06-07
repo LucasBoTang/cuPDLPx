@@ -327,6 +327,7 @@ static pdhg_solver_state_t *initialize_solver_state(const lp_problem_t *working_
     state->num_variables = n_vars;
     state->num_constraints = n_cons;
     state->objective_constant = working_problem->objective_constant;
+    state->objective_sign = (working_problem->objective_sense == OBJECTIVE_SENSE_MAXIMIZE) ? -1.0 : 1.0;
 
     state->constraint_matrix = (cu_sparse_matrix_csr_t *)safe_malloc(sizeof(cu_sparse_matrix_csr_t));
     state->constraint_matrix_t = (cu_sparse_matrix_csr_t *)safe_malloc(sizeof(cu_sparse_matrix_csr_t));
@@ -1260,8 +1261,8 @@ static cupdlpx_result_t *create_result_from_state(pdhg_solver_state_t *state, co
     results->cumulative_time_sec = state->cumulative_time_sec;
     results->relative_primal_residual = state->relative_primal_residual;
     results->relative_dual_residual = state->relative_dual_residual;
-    results->primal_objective_value = state->primal_objective_value;
-    results->dual_objective_value = state->dual_objective_value;
+    results->primal_objective_value = state->objective_sign * state->primal_objective_value;
+    results->dual_objective_value = state->objective_sign * state->dual_objective_value;
     results->objective_gap = state->objective_gap;
     results->relative_objective_gap = state->relative_objective_gap;
     results->max_primal_ray_infeasibility = state->max_primal_ray_infeasibility;
