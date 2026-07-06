@@ -39,6 +39,7 @@ lp_problem_t *convert_pslp_to_cupdlpx(PresolvedProblem *reduced_prob, const lp_p
     cupdlpx_prob->dual_start = NULL;
 
     cupdlpx_prob->objective_constant = original_prob->objective_constant + reduced_prob->obj_offset;
+    cupdlpx_prob->objective_sense = original_prob->objective_sense;
     cupdlpx_prob->objective_vector = reduced_prob->c;
 
     cupdlpx_prob->constraint_lower_bound = reduced_prob->lhs;
@@ -187,6 +188,10 @@ void pslp_postsolve(const cupdlpx_presolve_info_t *info, cupdlpx_result_t *resul
     result->num_reduced_constraints = info->presolver->reduced_prob->m;
     result->num_reduced_nonzeros = info->presolver->reduced_prob->nnz;
     result->presolve_status = info->presolve_status;
+
+    free(result->primal_solution);
+    free(result->dual_solution);
+    free(result->reduced_cost);
 
     result->primal_solution = (double *)safe_malloc(original_prob->num_variables * sizeof(double));
     result->dual_solution = (double *)safe_malloc(original_prob->num_constraints * sizeof(double));

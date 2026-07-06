@@ -37,7 +37,8 @@ static void run_once(const char *tag, const matrix_desc_t *A_desc, const double 
                                            u,      // constraint upper bound con_ub
                                            NULL,   // variable lower bound var_lb (defaults to 0)
                                            NULL,   // variable upper bound var_ub (defaults to +inf)
-                                           NULL    // objective constant c0 (defaults to 0.0)
+                                           NULL,   // objective constant c0 (defaults to 0.0)
+                                           NULL    // objective sense (defaults to minimize)
     );
     if (!prob)
     {
@@ -70,7 +71,7 @@ test_warm_start(const char *tag, const matrix_desc_t *A_desc, const double *c, c
     int n = A_desc->n;
     int m = A_desc->m;
 
-    lp_problem_t *prob = create_lp_problem(c, A_desc, l, u, NULL, NULL, NULL);
+    lp_problem_t *prob = create_lp_problem(c, A_desc, l, u, NULL, NULL, NULL, NULL);
     if (!prob)
     {
         fprintf(stderr, "[test] create_lp_problem failed for %s.\n", tag);
@@ -204,7 +205,8 @@ int main()
                                            u,        // con_ub
                                            NULL,     // var_lb
                                            NULL,     // var_ub
-                                           NULL      // objective_constant
+                                           NULL,     // objective_constant
+                                           NULL      // objective sense (defaults to minimize)
     );
     if (!prob)
     {
