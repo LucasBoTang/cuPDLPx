@@ -16,9 +16,7 @@ limitations under the License.
 
 #include "feasibility_polish.h"
 #include "utils.h"
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
-#include <cusparse.h>
+
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>

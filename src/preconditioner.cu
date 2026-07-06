@@ -16,9 +16,7 @@ limitations under the License.
 
 #include "preconditioner.h"
 #include "utils.h"
-#include <cub/device/device_reduce.cuh>
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <time.h>

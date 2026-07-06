@@ -16,11 +16,12 @@ limitations under the License.
 
 #pragma once
 
+// Include cuda_to_hip.h first: it pulls in the CUDA runtime/cuBLAS/cuSPARSE
+// headers on CUDA builds and their HIP equivalents on ROCm builds.
+#include "cuda_to_hip.h"
 #include "cusparse_compat.h"
 #include "internal_types.h"
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
-#include <cusparse.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
