@@ -509,6 +509,8 @@ static py::dict solve_once(py::object A,
     {
         throw std::runtime_error("create_lp_problem failed.");
     }
+    // free the problem even if a conversion/validation below throws
+    std::unique_ptr<lp_problem_t, decltype(&lp_problem_free)> prob_guard(prob, &lp_problem_free);
 
     // set warm start values if provided
     if ((primal_start && !primal_start.is_none()) || (dual_start && !dual_start.is_none()))
@@ -532,11 +534,14 @@ static py::dict solve_once(py::object A,
         py::gil_scoped_release release;
         res = solve_lp_problem(prob, &local_params);
     }
-    lp_problem_free(prob);
+    // problem is no longer needed once the solve returns
+    prob_guard.reset();
     if (!res)
     {
         throw std::runtime_error("solve_lp_problem returned NULL.");
     }
+    // free the result even if a conversion below throws
+    std::unique_ptr<cupdlpx_result_t, decltype(&cupdlpx_result_free)> res_guard(res, &cupdlpx_result_free);
 
     // parse result
     const int n_out = res->num_variables;
@@ -576,9 +581,7 @@ static py::dict solve_once(py::object A,
     info["PrimalRayLinObj"] = res->primal_ray_linear_objective;
     info["DualRayObj"] = res->dual_ray_objective;
 
-    // free result
-    cupdlpx_result_free(res);
-
+    // res freed by res_guard on return
     return info;
 }
 
