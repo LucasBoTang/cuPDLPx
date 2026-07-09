@@ -36,16 +36,21 @@ def _as_dense_f64_c(a: ArrayLike) -> np.ndarray:
         arr = np.ascontiguousarray(arr, dtype=np.float64)
     return arr
 
-def _as_csr_f64_i32(A: sp.spmatrix) -> sp.csr_matrix:
+def _as_csr_f64_i32(A) -> sp.csr_matrix:
     """
-    Convert input sparse matrix to CSR format with float64 values and int32 indices.
+    Convert input sparse matrix/array to CSR format with float64 values and
+    int32 indices. Never mutates the caller's matrix.
     """
-    csr = A.tocsr().astype(np.float64, copy=False)
+    csr = A.tocsr()
+    if csr is A:
+        csr = csr.copy()
+    if csr.dtype != np.float64:
+        csr = csr.astype(np.float64)
     # force int32 indices (common C/CUDA req)
     if csr.indptr.dtype != np.int32:
-        csr.indptr = csr.indptr.astype(np.int32, copy=True)
+        csr.indptr = csr.indptr.astype(np.int32, copy=False)
     if csr.indices.dtype != np.int32:
-        csr.indices = csr.indices.astype(np.int32, copy=True)
+        csr.indices = csr.indices.astype(np.int32, copy=False)
     csr.sort_indices()
     return csr
 
@@ -199,43 +204,42 @@ class Model:
         # clear cached solution
         self._clear_solution_cache()
 
-    def setConstraintMatrix(self, A_like: ArrayLike) -> None:
+    def setConstraintMatrix(self, A_like: Union[np.ndarray, sp.spmatrix]) -> None:
         """
         Overwrite constraint matrix A.
         """
-        if not isinstance(A_like, (np.ndarray, sp.spmatrix)):
-            raise TypeError("setConstraintMatrix: A must be a numpy.ndarray or scipy.sparse matrix")
+        if not (sp.issparse(A_like) or isinstance(A_like, np.ndarray)):
+            raise TypeError("setConstraintMatrix: A must be a numpy.ndarray or scipy.sparse matrix/array")
         if len(A_like.shape) != 2:
             raise ValueError(f"setConstraintMatrix: A must be 2D, got shape {A_like.shape}")
         if A_like.shape[1] != self.num_vars:
             raise ValueError(f"setConstraintMatrix: A shape {A_like.shape} does not match number of variables ({self.num_vars})")
-        # store as float64
+        # convert to backend layout (do not mutate self until all checks pass)
         if sp.issparse(A_like):
-            self.A = _as_csr_f64_i32(A_like)
+            A = _as_csr_f64_i32(A_like)
         else:
-            self.A = _as_dense_f64_c(A_like)
-        # problem dimensions
-        if not hasattr(self.A, "shape") or len(self.A.shape) != 2:
-            raise ValueError("constraint_matrix must be a 2D numpy.ndarray or scipy.sparse matrix.")
-        m, _ = self.A.shape
-        self.num_constrs = int(m)
-        # check constraint bounds
+            A = _as_dense_f64_c(A_like)
+        m = int(A.shape[0])
+        # validate existing constraint bounds against the new row count before committing
         l = getattr(self, "constr_lb", None)
         if l is not None:
-            l = np.asarray(l, dtype=np.float64).ravel()
-            if l.size != self.num_constrs:
+            n_l = np.asarray(l).ravel().size
+            if n_l != m:
                 raise ValueError(
-                    f"setConstraintMatrix: constraint_lower_bound length {l.size} != rows {self.num_constrs}. "
+                    f"setConstraintMatrix: constraint_lower_bound length {n_l} != rows {m}. "
                     f"Call setConstraintLowerBound(...) to update it."
                 )
         u = getattr(self, "constr_ub", None)
         if u is not None:
-            u = np.asarray(u, dtype=np.float64).ravel()
-            if u.size != self.num_constrs:
+            n_u = np.asarray(u).ravel().size
+            if n_u != m:
                 raise ValueError(
-                    f"setConstraintMatrix: constraint_upper_bound length {u.size} != rows {self.num_constrs}. "
+                    f"setConstraintMatrix: constraint_upper_bound length {n_u} != rows {m}. "
                     f"Call setConstraintUpperBound(...) to update it."
-               )
+                )
+        # commit
+        self.A = A
+        self.num_constrs = m
         # clear cached solution
         self._clear_solution_cache()
 
