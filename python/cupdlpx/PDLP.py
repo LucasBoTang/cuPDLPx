@@ -16,13 +16,15 @@
 MINIMIZE = 1
 MAXIMIZE = -1
 
-# Status codes
-OPTIMAL           = 0
-PRIMAL_INFEASIBLE = 1
-DUAL_INFEASIBLE   = 2
-TIME_LIMIT        = 3
-ITERATION_LIMIT   = 4
-UNSPECIFIED       = -1
+# Status codes (must match status_to_code in python_bindings/_core_bindings.cpp)
+OPTIMAL                 = 0
+PRIMAL_INFEASIBLE       = 1
+DUAL_INFEASIBLE         = 2
+TIME_LIMIT              = 3
+ITERATION_LIMIT         = 4
+INFEASIBLE_OR_UNBOUNDED = 5
+FEAS_POLISH_SUCCESS     = 6
+UNSPECIFIED             = -1
 
 
 # parameter name alias

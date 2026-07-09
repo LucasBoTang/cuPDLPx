@@ -226,6 +226,8 @@ static int status_to_code(termination_reason_t r)
             return 4;
         case TERMINATION_REASON_INFEASIBLE_OR_UNBOUNDED:
             return 5;
+        case TERMINATION_REASON_FEAS_POLISH_SUCCESS:
+            return 6;
         case TERMINATION_REASON_UNSPECIFIED:
         default:
             return -1;
