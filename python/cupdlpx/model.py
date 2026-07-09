@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 import os
-import warnings
 from typing import Any, Optional, Union
 
 import numpy as np
@@ -25,6 +24,9 @@ from . import PDLP
 
 # array-like type
 ArrayLike = Union[np.ndarray, list, tuple]
+
+# sentinel for "argument not provided" (distinct from None, which means "clear")
+_UNSET = object()
 
 def _as_dense_f64_c(a: ArrayLike) -> np.ndarray:
     """
@@ -149,6 +151,8 @@ class Model:
         self.ModelSense = PDLP.MINIMIZE
         # always start from backend defaults PDLP params
         self._params: dict[str, Any] = dict(get_default_params())
+        # canonical set of backend parameter keys, used to reject typos in setParam
+        self._valid_param_keys = frozenset(self._params)
         self.Params = _ParamsView(self)
         # set coefficients and bounds
         self.setObjectiveVector(objective_vector)
@@ -323,36 +327,37 @@ class Model:
         # clear cached solution
         self._clear_solution_cache()
 
-    def setWarmStart(self, primal: Optional[ArrayLike] = None, dual: Optional[ArrayLike] = None) -> None:
+    def setWarmStart(self, primal: Optional[ArrayLike] = _UNSET, dual: Optional[ArrayLike] = _UNSET) -> None:
         """
-        Set warm start values for primal and/or dual solutions.
+        Set, clear, or leave warm start values unchanged.
+
+        For each of primal/dual: pass an array to set it, None to clear it, or
+        omit the argument to leave the current value unchanged. Raises
+        ValueError on a size mismatch (previously only warned and kept the old
+        value, which could later fail inside the solver).
         """
-        # set primal warm start
-        if primal is not None:
-            primal_arr = _as_dense_f64_c(primal).ravel()
-            if primal_arr.size == self.num_vars:  # otherwise default to None
+        # primal warm start
+        if primal is not _UNSET:
+            if primal is None:
+                self._primal_start = None
+            else:
+                primal_arr = _as_dense_f64_c(primal).ravel()
+                if primal_arr.size != self.num_vars:
+                    raise ValueError(
+                        f"setWarmStart: primal size mismatch (expected {self.num_vars}, got {primal_arr.size})."
+                    )
                 self._primal_start = primal_arr
+        # dual warm start
+        if dual is not _UNSET:
+            if dual is None:
+                self._dual_start = None
             else:
-                warnings.warn(
-                    f"Warm start primal size mismatch (expected {self.num_vars}, got {primal_arr.size}).",
-                    RuntimeWarning
-                )
-        # clear primal warm start
-        else:
-            self._primal_start = None
-        # set dual warm start
-        if dual is not None:
-            dual_arr = _as_dense_f64_c(dual).ravel()          
-            if dual_arr.size == self.num_constrs:  # otherwise default to None
+                dual_arr = _as_dense_f64_c(dual).ravel()
+                if dual_arr.size != self.num_constrs:
+                    raise ValueError(
+                        f"setWarmStart: dual size mismatch (expected {self.num_constrs}, got {dual_arr.size})."
+                    )
                 self._dual_start = dual_arr
-            else:
-                warnings.warn(
-                    f"Warm start dual size mismatch (expected {self.num_constrs}, got {dual_arr.size}).",
-                    RuntimeWarning
-                )
-        # clear dual warm start
-        else:
-            self._dual_start = None
 
     def clearWarmStart(self) -> None:
         """
@@ -360,18 +365,29 @@ class Model:
         """
         self.setWarmStart(primal=None, dual=None)
 
+    def _resolve_param_key(self, name: str) -> str:
+        """
+        Map a user-facing parameter name (alias or backend key) to its backend
+        key, raising KeyError for unknown names instead of silently accepting them.
+        """
+        key = PDLP._PARAM_ALIAS.get(name, name)
+        if key not in self._valid_param_keys:
+            valid = sorted(PDLP._PARAM_ALIAS.keys()) + sorted(self._valid_param_keys)
+            raise KeyError(f"Unknown parameter '{name}'. Valid names: {valid}")
+        return key
+
     def setParam(self, name: str, value: Any) -> None:
         """
         Set the value of a solver parameter by name.
         """
-        key = PDLP._PARAM_ALIAS.get(name, name)
+        key = self._resolve_param_key(name)
         self._params[key] = value
 
     def getParam(self, name: str) -> Any:
         """
         Get the value of a solver parameter by name.
         """
-        key = PDLP._PARAM_ALIAS.get(name, name)
+        key = self._resolve_param_key(name)
         return self._params.get(key)
 
     def setParams(self, /, **kwargs) -> None:
