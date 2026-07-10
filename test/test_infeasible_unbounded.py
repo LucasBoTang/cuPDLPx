@@ -64,8 +64,6 @@ def test_unbounded_lp(base_lp_data, atol):
     model.setVariableLowerBound(lb)
     # turn off output
     model.setParams(OutputFlag=False, Presolve=False)
-    # set infeasible tolerance
-    model.setParams(InfeasibleTol=1e-6)
     # optimize
     #model.optimize()
     # check status
