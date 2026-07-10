@@ -81,6 +81,19 @@ def _as_dense_f64_c(a: ArrayLike) -> np.ndarray:
     """
     return np.array(a, dtype=np.float64, order="C", copy=True)
 
+def _readonly_array(arr: np.ndarray) -> np.ndarray:
+    arr.setflags(write=False)
+    return arr
+
+def _readonly_matrix(A):
+    if sp.issparse(A):
+        A.data.setflags(write=False)
+        A.indices.setflags(write=False)
+        A.indptr.setflags(write=False)
+    else:
+        A.setflags(write=False)
+    return A
+
 def _require_finite(name: str, arr: np.ndarray) -> None:
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} must contain only finite values")
@@ -109,7 +122,7 @@ def _as_csr_f64_i32(A) -> sp.csr_matrix:
     if csr.indices.dtype != np.int32:
         csr.indices = csr.indices.astype(np.int32, copy=False)
     csr.sort_indices()
-    return csr
+    return _readonly_matrix(csr)
 
 
 def read(filename: Union[str, os.PathLike]) -> "Model":
@@ -266,7 +279,7 @@ class Model:
         if c_arr.size != self.num_vars:
             raise ValueError(f"setObjectiveVector: length {c_arr.size} != self.num_vars ({self.num_vars})")
         _require_finite("objective_vector", c_arr)
-        self._c = c_arr
+        self._c = _readonly_array(c_arr)
         # clear cached solution
         self._clear_solution_cache()
 
@@ -317,7 +330,7 @@ class Model:
                     f"Call setConstraintUpperBound(...) to update it."
                 )
         # commit
-        self._A = A
+        self._A = _readonly_matrix(A)
         self.num_constrs = m
         # clear cached solution
         self._clear_solution_cache()
@@ -337,7 +350,7 @@ class Model:
             raise ValueError(
                 f"setConstraintLowerBound: length {constr_lb_arr.size} != self.num_constrs ({self.num_constrs})"
             )
-        self._constr_lb = constr_lb_arr
+        self._constr_lb = _readonly_array(constr_lb_arr)
         # clear cached solution
         self._clear_solution_cache()
 
@@ -356,7 +369,7 @@ class Model:
             raise ValueError(
                 f"setConstraintUpperBound: length {constr_ub_arr.size} != self.num_constrs ({self.num_constrs})"
             )
-        self._constr_ub = constr_ub_arr
+        self._constr_ub = _readonly_array(constr_ub_arr)
         # clear cached solution
         self._clear_solution_cache()
 
@@ -375,7 +388,7 @@ class Model:
             raise ValueError(
                 f"setVariableLowerBound: length {lb_arr.size} != self.num_vars ({self.num_vars})"
             )
-        self._lb = lb_arr
+        self._lb = _readonly_array(lb_arr)
         # clear cached solution
         self._clear_solution_cache()
 
@@ -394,7 +407,7 @@ class Model:
             raise ValueError(
                 f"setVariableUpperBound: length {ub_arr.size} != self.num_vars ({self.num_vars})"
             )
-        self._ub = ub_arr
+        self._ub = _readonly_array(ub_arr)
         # clear cached solution
         self._clear_solution_cache()
 
@@ -419,7 +432,7 @@ class Model:
                         f"setWarmStart: primal size mismatch (expected {self.num_vars}, got {primal_arr.size})."
                     )
                 _require_finite("primal warm start", primal_arr)
-                next_primal = primal_arr
+                next_primal = _readonly_array(primal_arr)
         # dual warm start
         if dual is not _UNSET:
             if dual is None:
@@ -431,7 +444,7 @@ class Model:
                         f"setWarmStart: dual size mismatch (expected {self.num_constrs}, got {dual_arr.size})."
                     )
                 _require_finite("dual warm start", dual_arr)
-                next_dual = dual_arr
+                next_dual = _readonly_array(dual_arr)
         self._primal_start = next_primal
         self._dual_start = next_dual
 

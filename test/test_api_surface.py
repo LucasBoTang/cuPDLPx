@@ -135,6 +135,33 @@ def test_dense_inputs_are_copied(base_lp_data):
     assert model.constr_ub[0] == 5.0
 
 
+def test_model_arrays_are_read_only(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    model = Model(c, A, l, u, lb, ub)
+    with pytest.raises(ValueError):
+        model.c[0] = 99.0
+    with pytest.raises(ValueError):
+        model.A[0, 0] = 99.0
+    with pytest.raises(ValueError):
+        model.constr_lb[0] = 99.0
+    with pytest.raises(ValueError):
+        model.constr_ub[0] = 99.0
+
+    model.c = [2.0, 3.0]
+    assert np.allclose(model.c, [2.0, 3.0])
+
+
+def test_sparse_model_arrays_are_read_only(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    model = Model(c, sp.csr_matrix(A), l, u, lb, ub)
+    with pytest.raises(ValueError):
+        model.A.data[0] = 99.0
+    with pytest.raises(ValueError):
+        model.A.indices[0] = 99
+    with pytest.raises(ValueError):
+        model.A.indptr[0] = 99
+
+
 def test_bound_order_validation(base_lp_data):
     model = _model(base_lp_data)
     model.lb = [2.0, 0.0]
