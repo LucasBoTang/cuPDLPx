@@ -292,16 +292,34 @@ def test_matrix_row_change_conflicts_with_bounds(base_lp_data):
 
 
 def test_params_view(base_lp_data):
-    """_ParamsView get/set via attribute and item access, plus keys()."""
+    """_ParamsView get/set via attribute and mapping-style access."""
     model = _model(base_lp_data)
     model.Params.TimeLimit = 123.0
     assert model.Params.TimeLimit == 123.0
     model.Params["OptimalityTol"] = 1e-5
     assert model.Params["OptimalityTol"] == 1e-5
     assert model.getParam("TimeLimit") == 123.0
+    assert "TimeLimit" in model.Params
+    assert "time_sec_limit" in model.Params
+    assert "DefinitelyNotAParam" not in model.Params
     assert len(list(model.Params.keys())) > 0
+    assert len(list(model.Params.values())) == len(list(model.Params.keys()))
+    assert dict(model.Params.items())["time_sec_limit"] == 123.0
     with pytest.raises(AttributeError):
         _ = model.Params.NoSuchParameter
+
+
+def test_param_aliases_resolve_consistently(base_lp_data):
+    """Every public parameter alias resolves to the same backend parameter."""
+    model = _model(base_lp_data)
+    for alias, key in PDLP._PARAM_ALIAS.items():
+        assert alias in model.Params
+        assert key in model.Params
+        value = model.getParam(key)
+        assert model.getParam(alias) == value
+        model.setParam(alias, value)
+        assert getattr(model.Params, alias) == value
+        assert model.Params[alias] == value
 
 
 def test_param_name_validation(base_lp_data):

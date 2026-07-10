@@ -189,6 +189,16 @@ class _ParamsView:
     def keys(self):
         return self._m._params.keys()
 
+    def values(self):
+        return self._m._params.values()
+
+    def items(self):
+        return self._m._params.items()
+
+    def __contains__(self, name: str):
+        key = PDLP._PARAM_ALIAS.get(name, name)
+        return key in self._m._params
+
 
 class Model:
     """
