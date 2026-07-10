@@ -383,10 +383,7 @@ static void expect_len(py::object obj, py::ssize_t expected, const char *name)
     }
 }
 
-// validate a compressed (CSR/CSC) index structure: monotone pointers ending at
-// nnz and inner indices within [0, minor). major/minor are (m, n) for CSR and
-// (n, m) for CSC. Guards the public solve_once entry against hand-built,
-// inconsistent matrices that would otherwise index out of bounds on the GPU.
+// validate a compressed (CSR/CSC) index structure
 static void validate_compressed(const int32_t *indptr, const int32_t *indices, int major, int minor, int nnz,
                                 const char *fmt)
 {
