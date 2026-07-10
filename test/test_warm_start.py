@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest
-import warnings
 
 import numpy as np
 from cupdlpx import Model, PDLP
@@ -167,29 +166,20 @@ def test_clear_warm_start(base_lp_data, atol):
     assert hasattr(model, "ObjVal"), "Model.ObjVal (objective value) not exposed."
     assert np.isclose(model.ObjVal, 3, atol=atol), f"Unexpected objective value: {model.ObjVal}"
 
-def test_warm_start_wrong_size_fallback(base_lp_data, atol):
+def test_warm_start_wrong_size_raises(base_lp_data):
     """
-    Verify that warm start with wrong size falls back to cold start with a warning.
+    Verify that warm start values with wrong sizes are rejected with ValueError.
     """
     # setup model
     c, A, l, u, lb, ub = base_lp_data
     model = Model(c, A, l, u, lb, ub)
     # turn off output
     model.setParams(OutputFlag=False, Presolve=False)
-    # set warm start values with wrong size
-    with pytest.warns(RuntimeWarning):
-        model.setWarmStart(primal=[1], dual=[1, 1]) # wrong sizes
-    # optimize
-    model.optimize()
-    # check status
-    assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status: {model.Status}"
-    # check primal solution
-    assert hasattr(model, "X"), "Model.X (primal solution) not exposed."
-    assert np.allclose(model.X, [1, 2], atol=atol), f"Unexpected primal solution: {model.X}"
-    # check dual solution
-    assert hasattr(model, "Pi"), "Model.Pi (dual solution) not exposed."
-    assert np.allclose(model.Pi, [1, -1, 0], atol=atol), f"Unexpected dual solution: {model.Pi}"
-    # check objective
-    assert hasattr(model, "ObjVal"), "Model.ObjVal (objective value) not exposed."
-    assert np.isclose(model.ObjVal, 3, atol=atol), f"Unexpected objective value: {model.ObjVal}"
+    # wrong-size warm start values are rejected
+    with pytest.raises(ValueError):
+        model.setWarmStart(primal=[1]) # wrong size
+    with pytest.raises(ValueError):
+        model.setWarmStart(dual=[1, 1]) # wrong size
+    # rejected values must not be stored
+    assert model._primal_start is None, "Rejected primal warm start was stored."
+    assert model._dual_start is None, "Rejected dual warm start was stored."
