@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Objective 
+"""Objective-sense and termination-status constants, plus parameter-name aliases."""
+
+# Objective
 MINIMIZE = 1
 MAXIMIZE = -1
 

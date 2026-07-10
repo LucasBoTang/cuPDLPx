@@ -75,7 +75,7 @@ m.setParams(OutputFlag=True, OptimalityTol=1e-8)
 m.optimize()
 
 # Retrieve results
-print("Status:", m.Status)
+print("Status:", m.StatusName)
 print("Objective:", m.ObjVal)
 print("Primal solution:", m.X)
 print("Dual solution:", m.Pi)
@@ -125,7 +125,7 @@ m = Model(objective_vector=c,
 
 ### Reading from MPS Files
 
-A `Model` can also be created directly from an MPS file (plain or gzip-compressed) with `cupdlpx.read`, similar to `gurobipy.read`:
+A `Model` can also be created directly from an MPS file (plain or gzip-compressed) with `cupdlpx.read`:
 
 ```python
 import cupdlpx
@@ -201,8 +201,8 @@ After calling `m.optimize()`, the solver stores results in a set of read-only at
 
 | Attribute | Type | Description |
 |---|---|---|
-| `Status` | str | Human-readable solver status (`"OPTIMAL"`, `"INFEASIBLE"`, `"UNBOUNDED"`, `"TIME_LIMIT"`, etc.). |
-| `StatusCode` | int | Numeric status code (`OPTIMAL=1`, `INFEASIBLE=2`, `UNBOUNDED=3`, `ITERATION_LIMIT=4`, `TIME_LIMIT=5`, `UNSPECIFIED=-1`). |
+| `Status` | int | Integer termination status code; compare against `cupdlpx.PDLP` constants: `OPTIMAL=0`, `PRIMAL_INFEASIBLE=1`, `DUAL_INFEASIBLE=2`, `TIME_LIMIT=3`, `ITERATION_LIMIT=4`, `INFEASIBLE_OR_UNBOUNDED=5`, `FEAS_POLISH_SUCCESS=6`, `UNSPECIFIED=-1`. |
+| `StatusName` | str | Human-readable status name, e.g. `"OPTIMAL"`, `"PRIMAL_INFEASIBLE"`. |
 | `ObjVal` | float | Primal objective value at termination (sign-adjusted according to `ModelSense`). |
 | `DualObj` | float | Dual objective value at termination. |
 | `Gap` | float | Absolute primal-dual gap. |
@@ -225,7 +225,7 @@ All solution-related information can then be queried directly from the `Model` o
 ```python
 m.optimize()
 
-print("Status:", m.Status, "(code:", m.StatusCode, ")")
+print("Status:", m.StatusName, "(code:", m.Status, ")")
 print("Primal objective:", m.ObjVal)
 print("Dual objective:", m.DualObj)
 print("Relative gap:", m.RelGap)

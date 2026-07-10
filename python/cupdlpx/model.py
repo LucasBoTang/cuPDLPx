@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Model interface for the cuPDLPx LP solver."""
+
 from __future__ import annotations
 import os
 from typing import Any, Optional, Union
@@ -60,20 +62,24 @@ def _as_csr_f64_i32(A) -> sp.csr_matrix:
 def read(filename: Union[str, os.PathLike]) -> "Model":
     """
     Read a linear program from an MPS file (plain or gzip-compressed) and
-    return a Model, similar to gurobipy.read.
+    return a Model.
 
     Parameters:
     - filename: Path to a .mps or .mps.gz file.
     """
+    # normalize path and check existence
     filename = os.fspath(filename)
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"No such MPS file: {filename}")
+    # parse the MPS file into raw problem data
     data = read_mps(str(filename))
+    # rebuild the constraint matrix in CSR form
     m = int(data["num_constraints"])
     n = int(data["num_variables"])
     A = sp.csr_matrix(
         (data["values"], data["col_ind"], data["row_ptr"]), shape=(m, n)
     )
+    # assemble the model
     model = Model(
         objective_vector=data["objective_vector"],
         constraint_matrix=A,
@@ -83,6 +89,7 @@ def read(filename: Union[str, os.PathLike]) -> "Model":
         variable_upper_bound=data["variable_upper_bound"],
         objective_constant=data["objective_constant"],
     )
+    # set objective sense
     model.ModelSense = PDLP.MAXIMIZE if data["maximize"] else PDLP.MINIMIZE
     return model
 
@@ -132,14 +139,16 @@ class Model:
 
         Parameters:
         - objective_vector: Coefficients of the objective function.
-        - constraint_matrix: Coefficients of the constraints.
-        - lower_bounds: Lower bounds for the decision variables.
-        - upper_bounds: Upper bounds for the decision variables.
-        - constraint_lower_bounds: Lower bounds for the constraints.
-        - constraint_upper_bounds: Upper bounds for the constraints.
+        - constraint_matrix: Constraint coefficient matrix (2D dense or scipy.sparse).
+        - constraint_lower_bound: Lower bounds for the constraints.
+        - constraint_upper_bound: Upper bounds for the constraints.
+        - variable_lower_bound: Lower bounds for the decision variables (default -inf).
+        - variable_upper_bound: Upper bounds for the decision variables (default +inf).
         - objective_constant: Constant term in the objective function.
-        - model_sense: PDLP.MINIMIZE or PDLP.MAXIMIZE.
-        If variable bounds are not provided, they default to -inf and +inf respectively.    
+
+        The objective sense defaults to PDLP.MINIMIZE; set model.ModelSense to
+        PDLP.MAXIMIZE to maximize. Constraint bounds may be None, meaning -inf
+        (lower) or +inf (upper).
         """
         # problem dimensions
         if not hasattr(constraint_matrix, "shape") or len(constraint_matrix.shape) != 2:
@@ -173,8 +182,8 @@ class Model:
         self._dualobj: Optional[float] = None # dual objective value
         self._gap: Optional[float] = None # primal-dual gap
         self._rel_gap: Optional[float] = None # relative gap
-        self._status: Optional[str] = None # solution status
-        self._status_code: Optional[int] = None # solution status code
+        self._status_name: Optional[str] = None # solution status name (str)
+        self._status_code: Optional[int] = None # solution status code (int)
         self._iter: Optional[int] = None # number of iterations
         self._runtime: Optional[float] = None # runtime
         self._rescale_time: Optional[float] = None # rescale time
@@ -370,7 +379,9 @@ class Model:
         Map a user-facing parameter name (alias or backend key) to its backend
         key, raising KeyError for unknown names instead of silently accepting them.
         """
+        # map alias to backend key
         key = PDLP._PARAM_ALIAS.get(name, name)
+        # reject unknown names
         if key not in self._valid_param_keys:
             valid = sorted(PDLP._PARAM_ALIAS.keys()) + sorted(self._valid_param_keys)
             raise KeyError(f"Unknown parameter '{name}'. Valid names: {valid}")
@@ -380,6 +391,7 @@ class Model:
         """
         Set the value of a solver parameter by name.
         """
+        # resolve name and store
         key = self._resolve_param_key(name)
         self._params[key] = value
 
@@ -387,6 +399,7 @@ class Model:
         """
         Get the value of a solver parameter by name.
         """
+        # resolve name and return
         key = self._resolve_param_key(name)
         return self._params.get(key)
 
@@ -437,7 +450,7 @@ class Model:
         status = info.get("Status")
         status_code = info.get("StatusCode")
         iters = info.get("Iterations")
-        self._status = str(status) if status is not None else None
+        self._status_name = str(status) if status is not None else None
         self._status_code = int(status_code) if status_code is not None else None
         self._iter = int(iters) if iters is not None else None
         self._runtime = info.get("RuntimeSec")
@@ -458,7 +471,7 @@ class Model:
         self._x = self._y = self._rc = None
         self._objval = self._dualobj = None
         self._gap = self._rel_gap = None
-        self._status = None
+        self._status_name = None
         self._status_code = None
         self._iter = None
         self._runtime = self._rescale_time = None
@@ -496,12 +509,17 @@ class Model:
         return self._rel_gap
     
     @property
-    def Status(self) -> Optional[str]:
-        return self._status
+    def Status(self) -> Optional[int]:
+        """
+        Integer termination status code. Compare against the constants in
+        cupdlpx.PDLP, e.g. ``model.Status == PDLP.OPTIMAL``.
+        """
+        return self._status_code
 
     @property
-    def StatusCode(self) -> Optional[int]:
-        return self._status_code
+    def StatusName(self) -> Optional[str]:
+        """Human-readable termination status name, e.g. ``'OPTIMAL'``."""
+        return self._status_name
 
     @property
     def IterCount(self) -> Optional[int]:

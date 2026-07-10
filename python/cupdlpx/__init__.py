@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""cuPDLPx: Python bindings for the GPU-accelerated first-order LP solver."""
+
 import os
 import platform
 
