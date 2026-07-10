@@ -18,7 +18,7 @@ import os
 import platform
 
 # Windows only: register CUDA bin for dependent DLL loading.
-if platform.system() == "Windows":
+if platform.system() == "Windows":  # pragma: no cover
     cuda_path = os.environ.get("CUDA_PATH")
     if cuda_path:
         bin_path = os.path.join(cuda_path, "bin")
@@ -35,5 +35,5 @@ from importlib.metadata import version, PackageNotFoundError
 # get version from package metadata (toml file)
 try:
     __version__ = version("cupdlpx")
-except PackageNotFoundError:
+except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
