@@ -101,6 +101,55 @@ def test_property_validation_errors(base_lp_data):
         model.ModelSense = 99
 
 
+def test_invalid_objective_assignment_preserves_previous_value(base_lp_data):
+    model = _model(base_lp_data)
+    original = model.c.copy()
+    with pytest.raises(ValueError):
+        model.c = [1.0, 2.0, 3.0]
+    assert np.allclose(model.c, original)
+
+
+def test_dense_inputs_are_copied(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    c = c.copy()
+    A = A.copy()
+    l = l.copy()
+    u = u.copy()
+    model = Model(c, A, l, u, lb, ub)
+    c[0] = 99.0
+    A[0, 0] = 99.0
+    l[0] = 99.0
+    u[0] = 99.0
+    assert np.allclose(model.c, [1.0, 1.0])
+    assert model.A[0, 0] == 1.0
+    assert model.constr_lb[0] == 5.0
+    assert model.constr_ub[0] == 5.0
+
+
+def test_bound_order_validation(base_lp_data):
+    model = _model(base_lp_data)
+    model.lb = [2.0, 0.0]
+    model.ub = [1.0, 1.0]
+    with pytest.raises(ValueError):
+        model.optimize()
+
+    with pytest.raises(ValueError):
+        Model(
+            [1.0],
+            np.array([[1.0]]),
+            constraint_lower_bound=[2.0],
+            constraint_upper_bound=[1.0],
+        )
+
+
+def test_set_params_is_transactional(base_lp_data):
+    model = _model(base_lp_data)
+    old_time_limit = model.getParam("TimeLimit")
+    with pytest.raises(KeyError):
+        model.setParams(TimeLimit=123.0, DefinitelyNotAParam=1)
+    assert model.getParam("TimeLimit") == old_time_limit
+
+
 def test_matrix_row_change_conflicts_with_bounds(base_lp_data):
     """Reassigning A with a different row count than existing bounds raises."""
     model = _model(base_lp_data)

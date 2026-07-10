@@ -32,13 +32,17 @@ _UNSET = object()
 
 def _as_dense_f64_c(a: ArrayLike) -> np.ndarray:
     """
-    Convert input to a C-contiguous numpy array of float64.
+    Convert input to an owned C-contiguous numpy array of float64.
     """
-    arr = np.asarray(a, dtype=np.float64)
-    # ensure C-contiguous
-    if not arr.flags.c_contiguous:
-        arr = np.ascontiguousarray(arr, dtype=np.float64)
-    return arr
+    return np.array(a, dtype=np.float64, order="C", copy=True)
+
+def _require_finite(name: str, arr: np.ndarray) -> None:
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+
+def _check_bounds(lower: Optional[np.ndarray], upper: Optional[np.ndarray], name: str) -> None:
+    if lower is not None and upper is not None and np.any(lower > upper):
+        raise ValueError(f"{name}: lower bounds must be <= upper bounds")
 
 def _as_csr_f64_i32(A) -> sp.csr_matrix:
     """
@@ -50,6 +54,10 @@ def _as_csr_f64_i32(A) -> sp.csr_matrix:
         csr = csr.copy()
     if csr.dtype != np.float64:
         csr = csr.astype(np.float64)
+    _require_finite("constraint_matrix", csr.data)
+    int32_max = np.iinfo(np.int32).max
+    if np.any(csr.indptr > int32_max) or np.any(csr.indices > int32_max):
+        raise OverflowError("constraint_matrix CSR indices exceed int32 range")
     # force int32 indices (common C/CUDA req)
     if csr.indptr.dtype != np.int32:
         csr.indptr = csr.indptr.astype(np.int32, copy=False)
@@ -179,6 +187,7 @@ class Model:
         self.setConstraintUpperBound(constraint_upper_bound)
         self.setVariableLowerBound(variable_lower_bound)
         self.setVariableUpperBound(variable_upper_bound)
+        self._validate_bounds()
         # initialize warm start values
         self._primal_start: Optional[np.ndarray] = None # warm start primal solution
         self._dual_start: Optional[np.ndarray] = None # warm start dual solution
@@ -206,13 +215,13 @@ class Model:
         """
         Overwrite objective vector c.
         """
-        # store as float64
-        self._c = _as_dense_f64_c(c)
-        # check dimensions
-        if self._c.ndim != 1:
-            raise ValueError(f"setObjectiveVector: c must be 1D, got shape {self._c.shape}")
-        if self._c.size != self.num_vars:
-            raise ValueError(f"setObjectiveVector: length {self._c.size} != self.num_vars ({self.num_vars})")
+        c_arr = _as_dense_f64_c(c)
+        if c_arr.ndim != 1:
+            raise ValueError(f"setObjectiveVector: c must be 1D, got shape {c_arr.shape}")
+        if c_arr.size != self.num_vars:
+            raise ValueError(f"setObjectiveVector: length {c_arr.size} != self.num_vars ({self.num_vars})")
+        _require_finite("objective_vector", c_arr)
+        self._c = c_arr
         # clear cached solution
         self._clear_solution_cache()
 
@@ -221,7 +230,10 @@ class Model:
         Overwrite objective constant term.
         Minimal check: convert to float.
         """
-        self._c0 = float(c0)
+        c0 = float(c0)
+        if not np.isfinite(c0):
+            raise ValueError("objective_constant must be finite")
+        self._c0 = c0
         # clear cached solution
         self._clear_solution_cache()
 
@@ -240,6 +252,7 @@ class Model:
             A = _as_csr_f64_i32(A_like)
         else:
             A = _as_dense_f64_c(A_like)
+            _require_finite("constraint_matrix", A)
         m = int(A.shape[0])
         # validate existing constraint bounds against the new row count before committing
         l = self._constr_lb
@@ -274,13 +287,12 @@ class Model:
             # clear cached solution
             self._clear_solution_cache()
             return
-        # convert to numpy array
-        constr_lb = _as_dense_f64_c(constr_lb).ravel()
-        if constr_lb.size != self.num_constrs:
+        constr_lb_arr = _as_dense_f64_c(constr_lb).ravel()
+        if constr_lb_arr.size != self.num_constrs:
             raise ValueError(
-                f"setConstraintLowerBound: length {constr_lb.size} != self.num_constrs ({self.num_constrs})"
+                f"setConstraintLowerBound: length {constr_lb_arr.size} != self.num_constrs ({self.num_constrs})"
             )
-        self._constr_lb = constr_lb
+        self._constr_lb = constr_lb_arr
         # clear cached solution
         self._clear_solution_cache()
 
@@ -294,13 +306,12 @@ class Model:
             # clear cached solution
             self._clear_solution_cache()
             return
-        # convert to numpy array
-        constr_ub = _as_dense_f64_c(constr_ub).ravel()
-        if constr_ub.size != self.num_constrs:
+        constr_ub_arr = _as_dense_f64_c(constr_ub).ravel()
+        if constr_ub_arr.size != self.num_constrs:
             raise ValueError(
-                f"setConstraintUpperBound: length {constr_ub.size} != self.num_constrs ({self.num_constrs})"
+                f"setConstraintUpperBound: length {constr_ub_arr.size} != self.num_constrs ({self.num_constrs})"
             )
-        self._constr_ub = constr_ub
+        self._constr_ub = constr_ub_arr
         # clear cached solution
         self._clear_solution_cache()
 
@@ -314,13 +325,12 @@ class Model:
             # clear cached solution
             self._clear_solution_cache()
             return
-        # convert to numpy array
-        lb = _as_dense_f64_c(lb).ravel()
-        if lb.size != self.num_vars:
+        lb_arr = _as_dense_f64_c(lb).ravel()
+        if lb_arr.size != self.num_vars:
             raise ValueError(
-                f"setVariableLowerBound: length {lb.size} != self.num_vars ({self.num_vars})"
+                f"setVariableLowerBound: length {lb_arr.size} != self.num_vars ({self.num_vars})"
             )
-        self._lb = lb
+        self._lb = lb_arr
         # clear cached solution
         self._clear_solution_cache()
 
@@ -334,13 +344,12 @@ class Model:
             # clear cached solution
             self._clear_solution_cache()
             return
-        # convert to numpy array
-        ub = _as_dense_f64_c(ub).ravel()
-        if ub.size != self.num_vars:
+        ub_arr = _as_dense_f64_c(ub).ravel()
+        if ub_arr.size != self.num_vars:
             raise ValueError(
-                f"setVariableUpperBound: length {ub.size} != self.num_vars ({self.num_vars})"
+                f"setVariableUpperBound: length {ub_arr.size} != self.num_vars ({self.num_vars})"
             )
-        self._ub = ub
+        self._ub = ub_arr
         # clear cached solution
         self._clear_solution_cache()
 
@@ -352,28 +361,34 @@ class Model:
         omit the argument to leave the current value unchanged. Raises
         ValueError on a size mismatch.
         """
+        next_primal = self._primal_start
+        next_dual = self._dual_start
         # primal warm start
         if primal is not _UNSET:
             if primal is None:
-                self._primal_start = None
+                next_primal = None
             else:
                 primal_arr = _as_dense_f64_c(primal).ravel()
                 if primal_arr.size != self.num_vars:
                     raise ValueError(
                         f"setWarmStart: primal size mismatch (expected {self.num_vars}, got {primal_arr.size})."
                     )
-                self._primal_start = primal_arr
+                _require_finite("primal warm start", primal_arr)
+                next_primal = primal_arr
         # dual warm start
         if dual is not _UNSET:
             if dual is None:
-                self._dual_start = None
+                next_dual = None
             else:
                 dual_arr = _as_dense_f64_c(dual).ravel()
                 if dual_arr.size != self.num_constrs:
                     raise ValueError(
                         f"setWarmStart: dual size mismatch (expected {self.num_constrs}, got {dual_arr.size})."
                     )
-                self._dual_start = dual_arr
+                _require_finite("dual warm start", dual_arr)
+                next_dual = dual_arr
+        self._primal_start = next_primal
+        self._dual_start = next_dual
 
     def clearWarmStart(self) -> None:
         """
@@ -414,8 +429,8 @@ class Model:
         """
         Set multiple solver parameters by name. 
         """
-        for k, v in kwargs.items():
-            self.setParam(k, v)
+        updates = {self._resolve_param_key(k): v for k, v in kwargs.items()}
+        self._params.update(updates)
 
     def optimize(self):
         """
@@ -426,6 +441,7 @@ class Model:
         # check model sense
         if self.ModelSense not in (PDLP.MINIMIZE, PDLP.MAXIMIZE):
             raise ValueError("model_sense must be PDLP.MINIMIZE or PDLP.MAXIMIZE")
+        self._validate_bounds()
         minimize = self.ModelSense == PDLP.MINIMIZE
         # call the core solver
         info = solve_once(
@@ -486,6 +502,10 @@ class Model:
         self._rel_d_res = None
         self._max_p_ray = self._max_d_ray = None
         self._p_ray_lin_obj = self._d_ray_obj = None
+
+    def _validate_bounds(self) -> None:
+        _check_bounds(self._lb, self._ub, "variable bounds")
+        _check_bounds(self._constr_lb, self._constr_ub, "constraint bounds")
 
     # model data (read/write; assignment reroutes through the validating setters)
     @property

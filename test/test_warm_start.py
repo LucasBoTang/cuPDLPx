@@ -183,3 +183,16 @@ def test_warm_start_wrong_size_raises(base_lp_data):
     # rejected values must not be stored
     assert model._primal_start is None, "Rejected primal warm start was stored."
     assert model._dual_start is None, "Rejected dual warm start was stored."
+
+
+def test_warm_start_update_is_transactional(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    model = Model(c, A, l, u, lb, ub)
+    model.setParams(OutputFlag=False, Presolve=False)
+    model.setWarmStart(primal=[1, 2], dual=[1, -1, 0])
+
+    with pytest.raises(ValueError):
+        model.setWarmStart(primal=[2, 1], dual=[1, 2])
+
+    assert np.allclose(model._primal_start, [1, 2])
+    assert np.allclose(model._dual_start, [1, -1, 0])
