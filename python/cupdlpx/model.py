@@ -599,6 +599,7 @@ class Model:
         self._max_d_ray = info.get("MaxDualRayInfeas")
         self._p_ray_lin_obj = info.get("PrimalRayLinObj")
         self._d_ray_obj = info.get("DualRayObj")
+        return self
 
     def _clear_solution_cache(self) -> None:
         """

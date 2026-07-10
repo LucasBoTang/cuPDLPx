@@ -25,7 +25,7 @@ def test_smoke_optimize_runs(base_lp_data):
     # turn off output
     model.setParams(OutputFlag=False, Presolve=False)
     # optimize
-    model.optimize()
+    assert model.optimize() is model
 
 def test_minimize_solution_correct(base_lp_data, atol):
     """
