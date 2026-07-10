@@ -30,6 +30,51 @@ ArrayLike = Union[np.ndarray, list, tuple]
 # sentinel for "argument not provided" (distinct from None, which means "clear")
 _UNSET = object()
 
+_BOOL_PARAMS = frozenset(
+    {
+        "verbose",
+        "has_pock_chambolle_alpha",
+        "bound_objective_rescaling",
+        "feasibility_polishing",
+        "presolve",
+    }
+)
+_INT_PARAMS = frozenset(
+    {
+        "termination_evaluation_frequency",
+        "iteration_limit",
+        "l_inf_ruiz_iterations",
+        "sv_max_iter",
+    }
+)
+_POSITIVE_INT_PARAMS = frozenset({"termination_evaluation_frequency", "sv_max_iter"})
+_FLOAT_PARAMS = frozenset(
+    {
+        "eps_optimal_relative",
+        "eps_feasible_relative",
+        "time_sec_limit",
+        "pock_chambolle_alpha",
+        "artificial_restart_threshold",
+        "sufficient_reduction_for_restart",
+        "necessary_reduction_for_restart",
+        "k_p",
+        "reflection_coefficient",
+        "eps_feas_polish_relative",
+        "sv_tol",
+        "matrix_zero_tol",
+    }
+)
+_POSITIVE_FLOAT_PARAMS = frozenset(
+    {
+        "eps_optimal_relative",
+        "eps_feasible_relative",
+        "eps_feas_polish_relative",
+        "sv_tol",
+    }
+)
+_NONNEGATIVE_FLOAT_PARAMS = frozenset({"time_sec_limit", "matrix_zero_tol"})
+_STRING_PARAMS = frozenset({"optimality_norm"})
+
 def _as_dense_f64_c(a: ArrayLike) -> np.ndarray:
     """
     Convert input to an owned C-contiguous numpy array of float64.
@@ -409,13 +454,50 @@ class Model:
             raise KeyError(f"Unknown parameter '{name}'. Valid names: {valid}")
         return key
 
+    def _validate_param_value(self, key: str, value: Any) -> Any:
+        if key in _BOOL_PARAMS:
+            if not isinstance(value, bool):
+                raise TypeError(f"Parameter '{key}' must be bool.")
+            return value
+
+        if key in _INT_PARAMS:
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise TypeError(f"Parameter '{key}' must be int.")
+            if key in _POSITIVE_INT_PARAMS and value <= 0:
+                raise ValueError(f"Parameter '{key}' must be positive.")
+            if key not in _POSITIVE_INT_PARAMS and value < 0:
+                raise ValueError(f"Parameter '{key}' must be nonnegative.")
+            return value
+
+        if key in _FLOAT_PARAMS:
+            if isinstance(value, bool):
+                raise TypeError(f"Parameter '{key}' must be a number.")
+            value = float(value)
+            if not np.isfinite(value):
+                raise ValueError(f"Parameter '{key}' must be finite.")
+            if key in _POSITIVE_FLOAT_PARAMS and value <= 0.0:
+                raise ValueError(f"Parameter '{key}' must be positive.")
+            if key in _NONNEGATIVE_FLOAT_PARAMS and value < 0.0:
+                raise ValueError(f"Parameter '{key}' must be nonnegative.")
+            return value
+
+        if key in _STRING_PARAMS:
+            if not isinstance(value, str):
+                raise TypeError(f"Parameter '{key}' must be str.")
+            value = value.lower()
+            if value not in ("l2", "linf"):
+                raise ValueError("Parameter 'optimality_norm' must be 'l2' or 'linf'.")
+            return value
+
+        return value
+
     def setParam(self, name: str, value: Any) -> None:
         """
         Set the value of a solver parameter by name.
         """
         # resolve name and store
         key = self._resolve_param_key(name)
-        self._params[key] = value
+        self._params[key] = self._validate_param_value(key, value)
 
     def getParam(self, name: str) -> Any:
         """
@@ -429,7 +511,10 @@ class Model:
         """
         Set multiple solver parameters by name. 
         """
-        updates = {self._resolve_param_key(k): v for k, v in kwargs.items()}
+        updates = {}
+        for k, v in kwargs.items():
+            key = self._resolve_param_key(k)
+            updates[key] = self._validate_param_value(key, v)
         self._params.update(updates)
 
     def optimize(self):

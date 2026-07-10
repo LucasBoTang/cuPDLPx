@@ -159,6 +159,37 @@ def test_set_params_is_transactional(base_lp_data):
     assert model.getParam("TimeLimit") == old_time_limit
 
 
+def test_param_value_validation(base_lp_data):
+    model = _model(base_lp_data)
+    model.setParam("TimeLimit", 12)
+    assert model.getParam("TimeLimit") == 12.0
+    model.setParam("OptimalityNorm", "LINF")
+    assert model.getParam("OptimalityNorm") == "linf"
+
+    with pytest.raises(TypeError):
+        model.setParam("OutputFlag", 1)
+    with pytest.raises(TypeError):
+        model.setParam("IterationLimit", False)
+    with pytest.raises(ValueError):
+        model.setParam("IterationLimit", -1)
+    with pytest.raises(ValueError):
+        model.setParam("TermCheckFreq", 0)
+    with pytest.raises(ValueError):
+        model.setParam("OptimalityTol", 0.0)
+    with pytest.raises(ValueError):
+        model.setParam("TimeLimit", -1.0)
+    with pytest.raises(ValueError):
+        model.setParam("OptimalityNorm", "l1")
+
+
+def test_set_params_value_validation_is_transactional(base_lp_data):
+    model = _model(base_lp_data)
+    old_time_limit = model.getParam("TimeLimit")
+    with pytest.raises(TypeError):
+        model.setParams(TimeLimit=123.0, OutputFlag=1)
+    assert model.getParam("TimeLimit") == old_time_limit
+
+
 def test_matrix_row_change_conflicts_with_bounds(base_lp_data):
     """Reassigning A with a different row count than existing bounds raises."""
     model = _model(base_lp_data)
