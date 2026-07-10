@@ -28,8 +28,6 @@ if platform.system() == "Windows":  # pragma: no cover
 from .model import Model, read
 from . import PDLP
 
-__all__ = ["Model", "read"]
-
 # versioning
 from importlib.metadata import version, PackageNotFoundError
 # get version from package metadata (toml file)
@@ -37,3 +35,5 @@ try:
     __version__ = version("cupdlpx")
 except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
+
+__all__ = ["Model", "PDLP", "read", "__version__"]

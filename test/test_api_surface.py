@@ -18,7 +18,16 @@ import numpy as np
 import scipy.sparse as sp
 import pytest
 
+import cupdlpx
 from cupdlpx import Model, PDLP, read
+
+
+def test_public_exports_include_documented_api():
+    assert cupdlpx.PDLP is PDLP
+    assert cupdlpx.Model is Model
+    assert cupdlpx.read is read
+    assert isinstance(cupdlpx.__version__, str)
+    assert set(cupdlpx.__all__) == {"Model", "PDLP", "read", "__version__"}
 
 
 def _model(base_lp_data):
