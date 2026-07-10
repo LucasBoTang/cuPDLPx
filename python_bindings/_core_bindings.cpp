@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <cstdint>
+#include <cmath>
 #include <cstring>
 #include <limits>
 #include <memory>
@@ -320,17 +321,42 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
     auto getf = [&](const char *k, double &tgt)
     {
         if (d.contains(k))
-            tgt = py::cast<double>(d[k]);
+        {
+            py::object val = d[k];
+            if (py::isinstance<py::bool_>(val))
+            {
+                throw std::invalid_argument(std::string(k) + " must be a number.");
+            }
+            tgt = py::cast<double>(val);
+            if (!std::isfinite(tgt))
+            {
+                throw std::invalid_argument(std::string(k) + " must be finite.");
+            }
+        }
     };
     auto geti = [&](const char *k, int &tgt)
     {
         if (d.contains(k))
-            tgt = py::cast<int>(d[k]);
+        {
+            py::object val = d[k];
+            if (py::isinstance<py::bool_>(val) || !py::isinstance<py::int_>(val))
+            {
+                throw std::invalid_argument(std::string(k) + " must be an int.");
+            }
+            tgt = py::cast<int>(val);
+        }
     };
     auto getb = [&](const char *k, bool &tgt)
     {
         if (d.contains(k))
-            tgt = py::cast<bool>(d[k]);
+        {
+            py::object val = d[k];
+            if (!py::isinstance<py::bool_>(val))
+            {
+                throw std::invalid_argument(std::string(k) + " must be a bool.");
+            }
+            tgt = py::cast<bool>(val);
+        }
     };
     auto get_norm = [&](const char *k, norm_type_t &tgt)
     {
@@ -390,6 +416,27 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
     getb("presolve", p->presolve);
 
     getf("matrix_zero_tol", p->matrix_zero_tol);
+
+    if (p->termination_evaluation_frequency <= 0)
+        throw std::invalid_argument("termination_evaluation_frequency must be positive.");
+    if (p->termination_criteria.iteration_limit < 0)
+        throw std::invalid_argument("iteration_limit must be nonnegative.");
+    if (p->l_inf_ruiz_iterations < 0)
+        throw std::invalid_argument("l_inf_ruiz_iterations must be nonnegative.");
+    if (p->sv_max_iter <= 0)
+        throw std::invalid_argument("sv_max_iter must be positive.");
+    if (p->termination_criteria.eps_optimal_relative <= 0.0)
+        throw std::invalid_argument("eps_optimal_relative must be positive.");
+    if (p->termination_criteria.eps_feasible_relative <= 0.0)
+        throw std::invalid_argument("eps_feasible_relative must be positive.");
+    if (p->termination_criteria.eps_feas_polish_relative <= 0.0)
+        throw std::invalid_argument("eps_feas_polish_relative must be positive.");
+    if (p->sv_tol <= 0.0)
+        throw std::invalid_argument("sv_tol must be positive.");
+    if (p->termination_criteria.time_sec_limit < 0.0)
+        throw std::invalid_argument("time_sec_limit must be nonnegative.");
+    if (p->matrix_zero_tol < 0.0)
+        throw std::invalid_argument("matrix_zero_tol must be nonnegative.");
 }
 
 // throw if a 1D array's length differs from the expected value

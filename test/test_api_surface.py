@@ -20,6 +20,7 @@ import pytest
 
 import cupdlpx
 from cupdlpx import Model, PDLP, read
+from cupdlpx._core import solve_once
 
 
 def test_public_exports_include_documented_api():
@@ -207,6 +208,20 @@ def test_param_value_validation(base_lp_data):
         model.setParam("TimeLimit", -1.0)
     with pytest.raises(ValueError):
         model.setParam("OptimalityNorm", "l1")
+
+
+def test_direct_core_param_value_validation(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, lb, ub, l, u, params={"verbose": 1})
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, lb, ub, l, u, params={"iteration_limit": False})
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, lb, ub, l, u, params={"eps_optimal_relative": 0.0})
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, lb, ub, l, u, params={"time_sec_limit": float("nan")})
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, lb, ub, l, u, params={"optimality_norm": "l1"})
 
 
 def test_set_params_value_validation_is_transactional(base_lp_data):
