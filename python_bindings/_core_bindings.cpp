@@ -368,6 +368,68 @@ static void parse_params_from_python(py::object params_obj, pdhg_parameters_t *p
     getf("matrix_zero_tol", p->matrix_zero_tol);
 }
 
+// throw if a 1D array's length differs from the expected value
+static void expect_len(py::object obj, py::ssize_t expected, const char *name)
+{
+    py::array arr = py::cast<py::array>(obj);
+    if (arr.ndim() != 1)
+    {
+        throw std::invalid_argument(std::string(name) + " must be 1D.");
+    }
+    if (arr.size() != expected)
+    {
+        throw std::invalid_argument(std::string(name) + " has wrong length: expected " +
+                                    std::to_string(expected) + ", got " + std::to_string((long long)arr.size()));
+    }
+}
+
+// validate a compressed (CSR/CSC) index structure: monotone pointers ending at
+// nnz and inner indices within [0, minor). major/minor are (m, n) for CSR and
+// (n, m) for CSC. Guards the public solve_once entry against hand-built,
+// inconsistent matrices that would otherwise index out of bounds on the GPU.
+static void validate_compressed(const int32_t *indptr, const int32_t *indices, int major, int minor, int nnz,
+                                const char *fmt)
+{
+    if (indptr[0] != 0)
+    {
+        throw std::invalid_argument(std::string(fmt) + ".indptr[0] must be 0.");
+    }
+    for (int i = 0; i < major; ++i)
+    {
+        if (indptr[i] > indptr[i + 1])
+        {
+            throw std::invalid_argument(std::string(fmt) + ".indptr must be non-decreasing.");
+        }
+    }
+    if (indptr[major] != nnz)
+    {
+        throw std::invalid_argument(std::string(fmt) + ".indptr[-1] must equal nnz.");
+    }
+    for (int k = 0; k < nnz; ++k)
+    {
+        if (indices[k] < 0 || indices[k] >= minor)
+        {
+            throw std::invalid_argument(std::string(fmt) + " has an index out of range [0, dim).");
+        }
+    }
+}
+
+// validate COO row/column indices are within [0, m) and [0, n) respectively
+static void validate_coo(const int32_t *row, const int32_t *col, int m, int n, int nnz)
+{
+    for (int k = 0; k < nnz; ++k)
+    {
+        if (row[k] < 0 || row[k] >= m)
+        {
+            throw std::invalid_argument("coo.row has an index out of range [0, m).");
+        }
+        if (col[k] < 0 || col[k] >= n)
+        {
+            throw std::invalid_argument("coo.col has an index out of range [0, n).");
+        }
+    }
+}
+
 // view of matrix from Python
 static PyMatrixView get_matrix_from_python(py::object A)
 {
@@ -417,9 +479,14 @@ static PyMatrixView get_matrix_from_python(py::object A)
         py::array v64 = get_array_f64_c_contig(vv, "csr.data(float64)"); // get contiguous data array
         desc.fmt = matrix_csr;
         desc.data.csr.nnz = static_cast<int>(v64.size());
+        // check index array lengths before dereferencing
+        expect_len(rp, static_cast<py::ssize_t>(desc.m) + 1, "csr.indptr");
+        expect_len(ci, static_cast<py::ssize_t>(desc.data.csr.nnz), "csr.indices");
         desc.data.csr.row_ptr = get_index_ptr_i32(rp, "csr.indptr", out.keep, out.keep.tmp_rowptr);
         desc.data.csr.col_ind = get_index_ptr_i32(ci, "csr.indices", out.keep, out.keep.tmp_colind);
         desc.data.csr.vals = static_cast<const double *>(v64.request().ptr);
+        // validate structure (protects the public solve_once entry)
+        validate_compressed(desc.data.csr.row_ptr, desc.data.csr.col_ind, desc.m, desc.n, desc.data.csr.nnz, "csr");
         out.keep.owners.push_back(v64); // keep alive
         return out;
     }
@@ -432,9 +499,14 @@ static PyMatrixView get_matrix_from_python(py::object A)
         py::array v64 = get_array_f64_c_contig(vv, "csc.data(float64)"); // get contiguous data array
         desc.fmt = matrix_csc;
         desc.data.csc.nnz = static_cast<int>(v64.size());
+        // check index array lengths before dereferencing
+        expect_len(cp, static_cast<py::ssize_t>(desc.n) + 1, "csc.indptr");
+        expect_len(ri, static_cast<py::ssize_t>(desc.data.csc.nnz), "csc.indices");
         desc.data.csc.col_ptr = get_index_ptr_i32(cp, "csc.indptr", out.keep, out.keep.tmp_rowptr);
         desc.data.csc.row_ind = get_index_ptr_i32(ri, "csc.indices", out.keep, out.keep.tmp_colind);
         desc.data.csc.vals = static_cast<const double *>(v64.request().ptr);
+        // validate structure (major=n, minor=m for CSC)
+        validate_compressed(desc.data.csc.col_ptr, desc.data.csc.row_ind, desc.n, desc.m, desc.data.csc.nnz, "csc");
         out.keep.owners.push_back(v64); // keep alive
         return out;
     }
@@ -447,9 +519,14 @@ static PyMatrixView get_matrix_from_python(py::object A)
         py::array v64 = get_array_f64_c_contig(vv, "coo.data(float64)"); // get contiguous data array
         desc.fmt = matrix_coo;
         desc.data.coo.nnz = static_cast<int>(v64.size());
+        // check index array lengths before dereferencing
+        expect_len(rr, static_cast<py::ssize_t>(desc.data.coo.nnz), "coo.row");
+        expect_len(cc, static_cast<py::ssize_t>(desc.data.coo.nnz), "coo.col");
         desc.data.coo.row_ind = get_index_ptr_i32(rr, "coo.row", out.keep, out.keep.tmp_row);
         desc.data.coo.col_ind = get_index_ptr_i32(cc, "coo.col", out.keep, out.keep.tmp_col);
         desc.data.coo.vals = static_cast<const double *>(v64.request().ptr);
+        // validate indices are within [0, m) x [0, n)
+        validate_coo(desc.data.coo.row_ind, desc.data.coo.col_ind, desc.m, desc.n, desc.data.coo.nnz);
         out.keep.owners.push_back(v64); // keep alive
         return out;
     }
@@ -462,7 +539,7 @@ static PyMatrixView get_matrix_from_python(py::object A)
 static py::dict solve_once(py::object A,
                            py::object objective_vector,          // c
                            py::object objective_constant,        // c0 (optional → 0)
-                           py::object variable_lower_bound,      // lb (optional → 0)
+                           py::object variable_lower_bound,      // lb (optional → -inf)
                            py::object variable_upper_bound,      // ub (optional → inf)
                            py::object constraint_lower_bound,    // l  (optional → -inf)
                            py::object constraint_upper_bound,    // u  (optional → inf)
