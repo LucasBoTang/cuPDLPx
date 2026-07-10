@@ -224,6 +224,22 @@ def test_direct_core_param_value_validation(base_lp_data):
         solve_once(A, c, None, lb, ub, l, u, params={"optimality_norm": "l1"})
 
 
+def test_direct_core_model_data_validation(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    with pytest.raises(ValueError):
+        solve_once(A, [np.nan, 1.0], None, lb, ub, l, u)
+    with pytest.raises(ValueError):
+        solve_once([[np.nan, 1.0], [0.0, 1.0], [3.0, 2.0]], c, None, lb, ub, l, u)
+    with pytest.raises(ValueError):
+        solve_once(A, c, np.nan, lb, ub, l, u)
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, [0.0, np.nan], ub, l, u)
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, [2.0, 0.0], [1.0, 1.0], l, u)
+    with pytest.raises(ValueError):
+        solve_once(A, c, None, lb, ub, l, u, primal_start=[np.nan, 0.0])
+
+
 def test_set_params_value_validation_is_transactional(base_lp_data):
     model = _model(base_lp_data)
     old_time_limit = model.getParam("TimeLimit")

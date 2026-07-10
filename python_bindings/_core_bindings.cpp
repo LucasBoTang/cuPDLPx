@@ -454,6 +454,51 @@ static void expect_len(py::object obj, py::ssize_t expected, const char *name)
     }
 }
 
+static void validate_finite_array(const double *data, py::ssize_t size, const char *name)
+{
+    if (!data)
+    {
+        return;
+    }
+    for (py::ssize_t i = 0; i < size; ++i)
+    {
+        if (!std::isfinite(data[i]))
+        {
+            throw std::invalid_argument(std::string(name) + " must contain only finite values.");
+        }
+    }
+}
+
+static void validate_no_nan_array(const double *data, py::ssize_t size, const char *name)
+{
+    if (!data)
+    {
+        return;
+    }
+    for (py::ssize_t i = 0; i < size; ++i)
+    {
+        if (std::isnan(data[i]))
+        {
+            throw std::invalid_argument(std::string(name) + " must not contain NaN.");
+        }
+    }
+}
+
+static void validate_bounds(const double *lower, const double *upper, int size, const char *name)
+{
+    if (!lower || !upper)
+    {
+        return;
+    }
+    for (int i = 0; i < size; ++i)
+    {
+        if (lower[i] > upper[i])
+        {
+            throw std::invalid_argument(std::string(name) + ": lower bounds must be <= upper bounds.");
+        }
+    }
+}
+
 // validate a compressed (CSR/CSC) index structure
 static void validate_compressed(const int32_t *indptr, const int32_t *indices, int major, int minor, int nnz,
                                 const char *fmt)
@@ -526,6 +571,7 @@ static PyMatrixView get_matrix_from_python(py::object A)
         {
             throw std::invalid_argument("dense matrix must be 2D");
         }
+        validate_finite_array(static_cast<const double *>(req.ptr), d.size(), "dense matrix");
         desc.m = static_cast<int>(req.shape[0]);
         desc.n = static_cast<int>(req.shape[1]);
         desc.fmt = matrix_dense;
@@ -545,6 +591,7 @@ static PyMatrixView get_matrix_from_python(py::object A)
         py::object ci = A.attr("indices");
         py::object vv = A.attr("data");
         py::array v64 = get_array_f64_c_contig(vv, "csr.data(float64)"); // get contiguous data array
+        validate_finite_array(static_cast<const double *>(v64.request().ptr), v64.size(), "csr.data");
         desc.fmt = matrix_csr;
         desc.data.csr.nnz = static_cast<int>(v64.size());
         // check index array lengths before dereferencing
@@ -565,6 +612,7 @@ static PyMatrixView get_matrix_from_python(py::object A)
         py::object ri = A.attr("indices");
         py::object vv = A.attr("data");
         py::array v64 = get_array_f64_c_contig(vv, "csc.data(float64)"); // get contiguous data array
+        validate_finite_array(static_cast<const double *>(v64.request().ptr), v64.size(), "csc.data");
         desc.fmt = matrix_csc;
         desc.data.csc.nnz = static_cast<int>(v64.size());
         // check index array lengths before dereferencing
@@ -585,6 +633,7 @@ static PyMatrixView get_matrix_from_python(py::object A)
         py::object cc = A.attr("col");
         py::object vv = A.attr("data");
         py::array v64 = get_array_f64_c_contig(vv, "coo.data(float64)"); // get contiguous data array
+        validate_finite_array(static_cast<const double *>(v64.request().ptr), v64.size(), "coo.data");
         desc.fmt = matrix_coo;
         desc.data.coo.nnz = static_cast<int>(v64.size());
         // check index array lengths before dereferencing
@@ -632,12 +681,23 @@ static py::dict solve_once(py::object A,
     const double *ub_ptr = get_arr_ptr_f64_or_null(variable_upper_bound, "variable_upper_bound", view.keep);
     const double *l_ptr = get_arr_ptr_f64_or_null(constraint_lower_bound, "constraint_lower_bound", view.keep);
     const double *u_ptr = get_arr_ptr_f64_or_null(constraint_upper_bound, "constraint_upper_bound", view.keep);
+    validate_finite_array(c_ptr, n, "objective_vector");
+    validate_no_nan_array(lb_ptr, n, "variable_lower_bound");
+    validate_no_nan_array(ub_ptr, n, "variable_upper_bound");
+    validate_no_nan_array(l_ptr, m, "constraint_lower_bound");
+    validate_no_nan_array(u_ptr, m, "constraint_upper_bound");
+    validate_bounds(lb_ptr, ub_ptr, n, "variable bounds");
+    validate_bounds(l_ptr, u_ptr, m, "constraint bounds");
     // get objective constant
     double c0_local = 0.0;
     double *c0_ptr = nullptr;
     if (objective_constant && !objective_constant.is_none())
     {
         c0_local = py::cast<double>(objective_constant);
+        if (!std::isfinite(c0_local))
+        {
+            throw std::invalid_argument("objective_constant must be finite.");
+        }
         c0_ptr = &c0_local;
     }
 
@@ -667,6 +727,8 @@ static py::dict solve_once(py::object A,
         ensure_len_or_null(dual_start, "dual_start", m);
         const double *primal_ptr = get_arr_ptr_f64_or_null(primal_start, "primal_start", view.keep);
         const double *dual_ptr = get_arr_ptr_f64_or_null(dual_start, "dual_start", view.keep);
+        validate_finite_array(primal_ptr, n, "primal_start");
+        validate_finite_array(dual_ptr, m, "dual_start");
 
         set_start_values(prob, primal_ptr, dual_ptr);
     }
