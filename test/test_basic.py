@@ -76,10 +76,7 @@ def test_maximize_solution_correct(base_lp_data, atol):
     c, A, l, u, lb, ub = base_lp_data
     model = Model(c, A, l, u, lb, ub)
     # model sense
-    try:
-        model.ModelSense = PDLP.MAXIMIZE
-    except Exception as e:
-        print(f"cuPDLPx: failed to set model sense to MAXIMIZE.")
+    model.ModelSense = PDLP.MAXIMIZE
     # turn off output
     model.setParams(OutputFlag=False, Presolve=False)
     # optimize

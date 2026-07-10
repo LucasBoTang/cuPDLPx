@@ -422,20 +422,24 @@ class Model:
             minimize=minimize,
         )
         # solutions
-        self._x = np.asarray(info.get("X")) if info.get("X") is not None else None
-        self._y = np.asarray(info.get("Pi")) if info.get("Pi") is not None else None
-        self._rc = np.asarray(info.get("RC")) if info.get("RC") is not None else None
+        x = info.get("X")
+        y = info.get("Pi")
+        rc = info.get("RC")
+        self._x = np.asarray(x) if x is not None else None
+        self._y = np.asarray(y) if y is not None else None
+        self._rc = np.asarray(rc) if rc is not None else None
         # objectives & gaps
-        primal_obj_eff = info.get("PrimalObj")
-        dual_obj_eff   = info.get("DualObj")
-        self._objval = primal_obj_eff if primal_obj_eff is not None else None
-        self._dualobj = dual_obj_eff if dual_obj_eff is not None else None
+        self._objval = info.get("PrimalObj")
+        self._dualobj = info.get("DualObj")
         self._gap = info.get("ObjectiveGap")
         self._rel_gap = info.get("RelativeObjectiveGap")
         # status & counters
-        self._status = str(info.get("Status")) if info.get("Status") is not None else None
-        self._status_code = int(info.get("StatusCode")) if info.get("StatusCode") is not None else None
-        self._iter = int(info.get("Iterations")) if info.get("Iterations") is not None else None
+        status = info.get("Status")
+        status_code = info.get("StatusCode")
+        iters = info.get("Iterations")
+        self._status = str(status) if status is not None else None
+        self._status_code = int(status_code) if status_code is not None else None
+        self._iter = int(iters) if iters is not None else None
         self._runtime = info.get("RuntimeSec")
         self._rescale_time = info.get("RescalingTimeSec")
         # residuals
@@ -444,10 +448,8 @@ class Model:
         # rays
         self._max_p_ray = info.get("MaxPrimalRayInfeas")
         self._max_d_ray = info.get("MaxDualRayInfeas")
-        p_ray_lin_eff  = info.get("PrimalRayLinObj")
-        d_ray_obj_eff  = info.get("DualRayObj")
-        self._p_ray_lin_obj = p_ray_lin_eff if p_ray_lin_eff is not None else None
-        self._d_ray_obj = d_ray_obj_eff if d_ray_obj_eff is not None else None
+        self._p_ray_lin_obj = info.get("PrimalRayLinObj")
+        self._d_ray_obj = info.get("DualRayObj")
 
     def _clear_solution_cache(self) -> None:
         """
