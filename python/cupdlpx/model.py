@@ -233,7 +233,8 @@ class Model:
         # objective sense (default minimize)
         self._model_sense = PDLP.MINIMIZE
         # always start from backend defaults PDLP params
-        self._params: dict[str, Any] = dict(get_default_params())
+        self._default_params: dict[str, Any] = dict(get_default_params())
+        self._params: dict[str, Any] = dict(self._default_params)
         # canonical set of backend parameter keys, used to reject typos in setParam
         self._valid_param_keys = frozenset(self._params)
         self.Params = _ParamsView(self)
@@ -529,6 +530,12 @@ class Model:
             key = self._resolve_param_key(k)
             updates[key] = self._validate_param_value(key, v)
         self._params.update(updates)
+
+    def resetParams(self) -> None:
+        """
+        Reset all solver parameters to their backend default values.
+        """
+        self._params = dict(self._default_params)
 
     def optimize(self):
         """

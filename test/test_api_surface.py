@@ -217,6 +217,18 @@ def test_set_params_value_validation_is_transactional(base_lp_data):
     assert model.getParam("TimeLimit") == old_time_limit
 
 
+def test_reset_params(base_lp_data):
+    c, A, l, u, lb, ub = base_lp_data
+    model = Model(c, A, l, u, lb, ub)
+    default_time_limit = model.getParam("TimeLimit")
+    default_output_flag = model.getParam("OutputFlag")
+
+    model.setParams(TimeLimit=12.0, OutputFlag=not default_output_flag)
+    model.resetParams()
+    assert model.getParam("TimeLimit") == default_time_limit
+    assert model.getParam("OutputFlag") is default_output_flag
+
+
 def test_matrix_row_change_conflicts_with_bounds(base_lp_data):
     """Reassigning A with a different row count than existing bounds raises."""
     model = _model(base_lp_data)
