@@ -39,7 +39,7 @@ def test_warm_start(base_lp_data, atol):
     # cold start baseline
     model.optimize()
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "OPTIMAL", f"Unexpected termination status (cold): {model.Status}"
+    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status (cold): {model.Status}"
     assert hasattr(model, "IterCount"), "Model.IterCount not exposed."
     baseline_iters = model.IterCount
     # set warm start values
@@ -48,7 +48,7 @@ def test_warm_start(base_lp_data, atol):
     model.optimize()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "OPTIMAL", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status: {model.Status}"
     # check primal solution
     assert hasattr(model, "X"), "Model.X (primal solution) not exposed."
     assert np.allclose(model.X, [1, 2], atol=atol), f"Unexpected primal solution: {model.X}"
@@ -89,7 +89,7 @@ def test_warm_start_primal(base_lp_data, atol):
     model.optimize()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "OPTIMAL", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status: {model.Status}"
     # check primal solution
     assert hasattr(model, "X"), "Model.X (primal solution) not exposed."
     assert np.allclose(model.X, [1, 2], atol=atol), f"Unexpected primal solution: {model.X}"
@@ -125,7 +125,7 @@ def test_warm_start_dual(base_lp_data, atol):
     model.optimize()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "OPTIMAL", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status: {model.Status}"
     # check primal solution
     assert hasattr(model, "X"), "Model.X (primal solution) not exposed."
     assert np.allclose(model.X, [1, 2], atol=atol), f"Unexpected primal solution: {model.X}"
@@ -156,7 +156,7 @@ def test_clear_warm_start(base_lp_data, atol):
     model.optimize()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "OPTIMAL", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status: {model.Status}"
     # check primal solution
     assert hasattr(model, "X"), "Model.X (primal solution) not exposed."
     assert np.allclose(model.X, [1, 2], atol=atol), f"Unexpected primal solution: {model.X}"
@@ -183,7 +183,7 @@ def test_warm_start_wrong_size_fallback(base_lp_data, atol):
     model.optimize()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "OPTIMAL", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.OPTIMAL, f"Unexpected termination status: {model.Status}"
     # check primal solution
     assert hasattr(model, "X"), "Model.X (primal solution) not exposed."
     assert np.allclose(model.X, [1, 2], atol=atol), f"Unexpected primal solution: {model.X}"

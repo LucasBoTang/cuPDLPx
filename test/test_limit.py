@@ -29,7 +29,7 @@
 import time
 import numpy as np
 import scipy.sparse as sp
-from cupdlpx import Model
+from cupdlpx import Model, PDLP
 
 SEED = 42
 
@@ -57,7 +57,7 @@ def test_time_limit(atol):
     tock = time.time()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "TIME_LIMIT", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.TIME_LIMIT, f"Unexpected termination status: {model.Status}"
     # check solving time
     solving_time = tock - tick
     assert solving_time < 1, f"Solving time exceeded limit a lot: {solving_time} seconds"
@@ -87,7 +87,7 @@ def test_iters_limit(atol):
     model.optimize()
     # check status
     assert hasattr(model, "Status"), "Model.Status not exposed."
-    assert model.Status == "ITERATION_LIMIT", f"Unexpected termination status: {model.Status}"
+    assert model.Status == PDLP.ITERATION_LIMIT, f"Unexpected termination status: {model.Status}"
     # check solving time
     assert hasattr(model, "IterCount"), "Model.IterCount not exposed."
     assert model.IterCount <= 200, f"Internal iteration count exceeded limit a lot: {model.IterCount} seconds"

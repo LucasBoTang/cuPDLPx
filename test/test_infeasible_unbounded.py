@@ -39,8 +39,7 @@ def test_infeasible_lp(base_lp_data, atol):
     #model.optimize()
     # check status
     #assert hasattr(model, "Status"), "Model.Status not exposed."
-    #assert model.Status == "PRIMAL_INFEASIBLE", f"Unexpected termination status: {model.Status}"
-    #assert model.StatusCode == PDLP.PRIMAL_INFEASIBLE, f"Unexpected termination status code: {model.StatusCode}"
+    #assert model.Status == PDLP.PRIMAL_INFEASIBLE, f"Unexpected termination status: {model.Status}"
     # check dual ray
     #assert model.DualRayObj > atol, f"DualRayObj should be positive for dual infeasible, got {model.DualRayObj}"
 
@@ -71,7 +70,6 @@ def test_unbounded_lp(base_lp_data, atol):
     #model.optimize()
     # check status
     #assert hasattr(model, "Status"), "Model.Status not exposed."
-    #assert model.Status == "DUAL_INFEASIBLE", f"Unexpected termination status: {model.Status}"
-    #assert model.StatusCode == PDLP.DUAL_INFEASIBLE, f"Unexpected termination status code: {model.StatusCode}"
+    #assert model.Status == PDLP.DUAL_INFEASIBLE, f"Unexpected termination status: {model.Status}"
     # check primal ray
     #assert model.PrimalRayLinObj < -atol, f"PrimalRayLinObj should be negative for dual infeasible, got {model.PrimalRayLinObj}"
