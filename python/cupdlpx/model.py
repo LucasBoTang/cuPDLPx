@@ -156,8 +156,16 @@ class Model:
         m, n = constraint_matrix.shape
         self.num_vars = int(n)
         self.num_constrs = int(m)
-        # sense
-        self.ModelSense = PDLP.MINIMIZE
+        # model data storage (populated by the setters below; exposed via properties)
+        self._A = None
+        self._c: Optional[np.ndarray] = None
+        self._c0: float = 0.0
+        self._lb: Optional[np.ndarray] = None
+        self._ub: Optional[np.ndarray] = None
+        self._constr_lb: Optional[np.ndarray] = None
+        self._constr_ub: Optional[np.ndarray] = None
+        # objective sense (default minimize)
+        self._model_sense = PDLP.MINIMIZE
         # always start from backend defaults PDLP params
         self._params: dict[str, Any] = dict(get_default_params())
         # canonical set of backend parameter keys, used to reject typos in setParam
@@ -199,12 +207,12 @@ class Model:
         Overwrite objective vector c.
         """
         # store as float64
-        self.c = _as_dense_f64_c(c)
+        self._c = _as_dense_f64_c(c)
         # check dimensions
-        if self.c.ndim != 1:
-            raise ValueError(f"setObjectiveVector: c must be 1D, got shape {self.c.shape}")
-        if self.c.size != self.num_vars:
-            raise ValueError(f"setObjectiveVector: length {self.c.size} != self.num_vars ({self.num_vars})")
+        if self._c.ndim != 1:
+            raise ValueError(f"setObjectiveVector: c must be 1D, got shape {self._c.shape}")
+        if self._c.size != self.num_vars:
+            raise ValueError(f"setObjectiveVector: length {self._c.size} != self.num_vars ({self.num_vars})")
         # clear cached solution
         self._clear_solution_cache()
 
@@ -213,7 +221,7 @@ class Model:
         Overwrite objective constant term.
         Minimal check: convert to float.
         """
-        self.c0 = float(c0)
+        self._c0 = float(c0)
         # clear cached solution
         self._clear_solution_cache()
 
@@ -234,7 +242,7 @@ class Model:
             A = _as_dense_f64_c(A_like)
         m = int(A.shape[0])
         # validate existing constraint bounds against the new row count before committing
-        l = getattr(self, "constr_lb", None)
+        l = self._constr_lb
         if l is not None:
             n_l = np.asarray(l).ravel().size
             if n_l != m:
@@ -242,7 +250,7 @@ class Model:
                     f"setConstraintMatrix: constraint_lower_bound length {n_l} != rows {m}. "
                     f"Call setConstraintLowerBound(...) to update it."
                 )
-        u = getattr(self, "constr_ub", None)
+        u = self._constr_ub
         if u is not None:
             n_u = np.asarray(u).ravel().size
             if n_u != m:
@@ -251,7 +259,7 @@ class Model:
                     f"Call setConstraintUpperBound(...) to update it."
                 )
         # commit
-        self.A = A
+        self._A = A
         self.num_constrs = m
         # clear cached solution
         self._clear_solution_cache()
@@ -262,7 +270,7 @@ class Model:
         """
         # check if the input is None
         if constr_lb is None:
-            self.constr_lb = None
+            self._constr_lb = None
             # clear cached solution
             self._clear_solution_cache()
             return
@@ -272,7 +280,7 @@ class Model:
             raise ValueError(
                 f"setConstraintLowerBound: length {constr_lb.size} != self.num_constrs ({self.num_constrs})"
             )
-        self.constr_lb = constr_lb
+        self._constr_lb = constr_lb
         # clear cached solution
         self._clear_solution_cache()
 
@@ -282,7 +290,7 @@ class Model:
         """
         # check if the input is None
         if constr_ub is None:
-            self.constr_ub = None
+            self._constr_ub = None
             # clear cached solution
             self._clear_solution_cache()
             return
@@ -292,7 +300,7 @@ class Model:
             raise ValueError(
                 f"setConstraintUpperBound: length {constr_ub.size} != self.num_constrs ({self.num_constrs})"
             )
-        self.constr_ub = constr_ub
+        self._constr_ub = constr_ub
         # clear cached solution
         self._clear_solution_cache()
 
@@ -302,7 +310,7 @@ class Model:
         """
         # check if the input is None
         if lb is None:
-            self.lb = None
+            self._lb = None
             # clear cached solution
             self._clear_solution_cache()
             return
@@ -312,7 +320,7 @@ class Model:
             raise ValueError(
                 f"setVariableLowerBound: length {lb.size} != self.num_vars ({self.num_vars})"
             )
-        self.lb = lb
+        self._lb = lb
         # clear cached solution
         self._clear_solution_cache()
 
@@ -322,7 +330,7 @@ class Model:
         """
         # check if the input is None
         if ub is None:
-            self.ub = None
+            self._ub = None
             # clear cached solution
             self._clear_solution_cache()
             return
@@ -332,7 +340,7 @@ class Model:
             raise ValueError(
                 f"setVariableUpperBound: length {ub.size} != self.num_vars ({self.num_vars})"
             )
-        self.ub = ub
+        self._ub = ub
         # clear cached solution
         self._clear_solution_cache()
 
@@ -479,6 +487,84 @@ class Model:
         self._rel_d_res = None
         self._max_p_ray = self._max_d_ray = None
         self._p_ray_lin_obj = self._d_ray_obj = None
+
+    # model data (read/write; assignment reroutes through the validating setters)
+    @property
+    def c(self) -> Optional[np.ndarray]:
+        """Objective coefficient vector."""
+        return self._c
+
+    @c.setter
+    def c(self, value: ArrayLike) -> None:
+        self.setObjectiveVector(value)
+
+    @property
+    def c0(self) -> float:
+        """Objective constant term."""
+        return self._c0
+
+    @c0.setter
+    def c0(self, value: float) -> None:
+        self.setObjectiveConstant(value)
+
+    @property
+    def A(self):
+        """Constraint matrix (CSR for sparse input, dense ndarray otherwise)."""
+        return self._A
+
+    @A.setter
+    def A(self, value) -> None:
+        self.setConstraintMatrix(value)
+
+    @property
+    def lb(self) -> Optional[np.ndarray]:
+        """Variable lower bounds (None means -inf)."""
+        return self._lb
+
+    @lb.setter
+    def lb(self, value: Optional[ArrayLike]) -> None:
+        self.setVariableLowerBound(value)
+
+    @property
+    def ub(self) -> Optional[np.ndarray]:
+        """Variable upper bounds (None means +inf)."""
+        return self._ub
+
+    @ub.setter
+    def ub(self, value: Optional[ArrayLike]) -> None:
+        self.setVariableUpperBound(value)
+
+    @property
+    def constr_lb(self) -> Optional[np.ndarray]:
+        """Constraint lower bounds (None means -inf)."""
+        return self._constr_lb
+
+    @constr_lb.setter
+    def constr_lb(self, value: Optional[ArrayLike]) -> None:
+        self.setConstraintLowerBound(value)
+
+    @property
+    def constr_ub(self) -> Optional[np.ndarray]:
+        """Constraint upper bounds (None means +inf)."""
+        return self._constr_ub
+
+    @constr_ub.setter
+    def constr_ub(self, value: Optional[ArrayLike]) -> None:
+        self.setConstraintUpperBound(value)
+
+    @property
+    def ModelSense(self) -> int:
+        """Objective sense: PDLP.MINIMIZE or PDLP.MAXIMIZE."""
+        return self._model_sense
+
+    @ModelSense.setter
+    def ModelSense(self, value: int) -> None:
+        # validate sense
+        if value not in (PDLP.MINIMIZE, PDLP.MAXIMIZE):
+            raise ValueError("ModelSense must be PDLP.MINIMIZE or PDLP.MAXIMIZE")
+        self._model_sense = value
+        # clear cached solution
+        self._clear_solution_cache()
 
     @property
     def X(self) -> Optional[np.ndarray]:
