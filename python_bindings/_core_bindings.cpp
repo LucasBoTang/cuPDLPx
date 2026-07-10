@@ -234,6 +234,30 @@ static int status_to_code(termination_reason_t r)
     }
 }
 
+static void validate_result_dimensions(const cupdlpx_result_t *res, int expected_n, int expected_m)
+{
+    if (res->num_variables != expected_n || res->num_constraints != expected_m)
+    {
+        throw std::runtime_error("solve_lp_problem returned result dimensions " +
+                                 std::to_string(res->num_variables) + "x" +
+                                 std::to_string(res->num_constraints) +
+                                 ", expected " + std::to_string(expected_n) +
+                                 "x" + std::to_string(expected_m) + ".");
+    }
+    if (expected_n > 0 && !res->primal_solution)
+    {
+        throw std::runtime_error("solve_lp_problem returned NULL primal_solution.");
+    }
+    if (expected_m > 0 && !res->dual_solution)
+    {
+        throw std::runtime_error("solve_lp_problem returned NULL dual_solution.");
+    }
+    if (expected_n > 0 && !res->reduced_cost)
+    {
+        throw std::runtime_error("solve_lp_problem returned NULL reduced_cost.");
+    }
+}
+
 // get default parameters as Python dict
 static py::dict get_default_params_py()
 {
@@ -620,6 +644,7 @@ static py::dict solve_once(py::object A,
     std::unique_ptr<cupdlpx_result_t, decltype(&cupdlpx_result_free)> res_guard(res, &cupdlpx_result_free);
 
     // parse result
+    validate_result_dimensions(res, n, m);
     const int n_out = res->num_variables;
     const int m_out = res->num_constraints;
     py::array_t<double> x({n_out});
@@ -627,9 +652,15 @@ static py::dict solve_once(py::object A,
     py::array_t<double> rc({n_out});
     {
         auto xb = x.request(), yb = y.request(), rcb = rc.request();
-        std::memcpy(xb.ptr, res->primal_solution, sizeof(double) * n_out);
-        std::memcpy(yb.ptr, res->dual_solution, sizeof(double) * m_out);
-        std::memcpy(rcb.ptr, res->reduced_cost, sizeof(double) * n_out);
+        if (n_out > 0)
+        {
+            std::memcpy(xb.ptr, res->primal_solution, sizeof(double) * n_out);
+            std::memcpy(rcb.ptr, res->reduced_cost, sizeof(double) * n_out);
+        }
+        if (m_out > 0)
+        {
+            std::memcpy(yb.ptr, res->dual_solution, sizeof(double) * m_out);
+        }
     }
     // build info dict
     py::dict info;
