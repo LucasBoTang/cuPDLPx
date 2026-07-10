@@ -75,6 +75,17 @@ _POSITIVE_FLOAT_PARAMS = frozenset(
 _NONNEGATIVE_FLOAT_PARAMS = frozenset({"time_sec_limit", "matrix_zero_tol"})
 _STRING_PARAMS = frozenset({"optimality_norm"})
 
+# int params are stored as C int32 on the backend
+_INT32_MAX = np.iinfo(np.int32).max
+
+# every backend param must fall in one typed set, else it goes unvalidated
+_CLASSIFIED_PARAMS = _BOOL_PARAMS | _INT_PARAMS | _FLOAT_PARAMS | _STRING_PARAMS
+
+# refinement sets must be subsets of their base type sets
+assert _POSITIVE_INT_PARAMS <= _INT_PARAMS
+assert _POSITIVE_FLOAT_PARAMS <= _FLOAT_PARAMS
+assert _NONNEGATIVE_FLOAT_PARAMS <= _FLOAT_PARAMS
+
 def _as_dense_f64_c(a: ArrayLike) -> np.ndarray:
     """
     Convert input to an owned C-contiguous numpy array of float64.
@@ -117,15 +128,19 @@ def _as_csr_f64_i32(A) -> sp.csr_matrix:
     if csr.dtype != np.float64:
         csr = csr.astype(np.float64)
     _require_finite("constraint_matrix", csr.data)
-    int32_max = np.iinfo(np.int32).max
-    if np.any(csr.indptr > int32_max) or np.any(csr.indices > int32_max):
-        raise OverflowError("constraint_matrix CSR indices exceed int32 range")
-    # force int32 indices (common C/CUDA req)
+    # merge duplicate (row, col) entries and sort indices within each row
+    csr.sum_duplicates()
+    csr.sort_indices()
+    # force int32 indices (common C/CUDA req); int32 arrays can't overflow
     if csr.indptr.dtype != np.int32:
+        # indptr is non-decreasing, so its last entry (== nnz) is the maximum
+        if csr.indptr[-1] > _INT32_MAX:
+            raise OverflowError("constraint_matrix CSR indptr exceeds int32 range")
         csr.indptr = csr.indptr.astype(np.int32, copy=False)
     if csr.indices.dtype != np.int32:
+        if csr.indices.size and csr.indices.max() > _INT32_MAX:
+            raise OverflowError("constraint_matrix CSR indices exceed int32 range")
         csr.indices = csr.indices.astype(np.int32, copy=False)
-    csr.sort_indices()
     return _readonly_matrix(csr)
 
 
@@ -199,6 +214,15 @@ class _ParamsView:
         key = PDLP._PARAM_ALIAS.get(name, name)
         return key in self._m._params
 
+    def __iter__(self):
+        return iter(self._m._params)
+
+    def __len__(self):
+        return len(self._m._params)
+
+    def __repr__(self):
+        return f"ParamsView({dict(self._m._params)!r})"
+
 
 class Model:
     """
@@ -251,20 +275,15 @@ class Model:
         self._params: dict[str, Any] = dict(self._default_params)
         # canonical set of backend parameter keys, used to reject typos in setParam
         self._valid_param_keys = frozenset(self._params)
+        # fail loudly if the backend exposes a param the typed sets don't cover
+        unclassified = self._valid_param_keys - _CLASSIFIED_PARAMS
+        if unclassified:
+            raise RuntimeError(f"Unclassified solver parameters (update model.py): {sorted(unclassified)}")
         self.Params = _ParamsView(self)
-        # set coefficients and bounds
-        self.setObjectiveVector(objective_vector)
-        self.setObjectiveConstant(objective_constant)
-        self.setConstraintMatrix(constraint_matrix)
-        self.setConstraintLowerBound(constraint_lower_bound)
-        self.setConstraintUpperBound(constraint_upper_bound)
-        self.setVariableLowerBound(variable_lower_bound)
-        self.setVariableUpperBound(variable_upper_bound)
-        self._validate_bounds()
         # initialize warm start values
         self._primal_start: Optional[np.ndarray] = None # warm start primal solution
         self._dual_start: Optional[np.ndarray] = None # warm start dual solution
-        # initialize solution attributes
+        # initialize solution attributes before the setters below
         self._x: Optional[np.ndarray] = None # primal solution
         self._y: Optional[np.ndarray] = None # dual solution
         self._rc: Optional[np.ndarray] = None # reduced costs
@@ -283,6 +302,15 @@ class Model:
         self._max_d_ray: Optional[float] = None # maximum dual ray
         self._p_ray_lin_obj: Optional[float] = None # primal ray linear objective
         self._d_ray_obj: Optional[float] = None # dual ray objective
+        # set coefficients and bounds
+        self.setObjectiveVector(objective_vector)
+        self.setObjectiveConstant(objective_constant)
+        self.setConstraintMatrix(constraint_matrix)
+        self.setConstraintLowerBound(constraint_lower_bound)
+        self.setConstraintUpperBound(constraint_upper_bound)
+        self.setVariableLowerBound(variable_lower_bound)
+        self.setVariableUpperBound(variable_upper_bound)
+        self._validate_bounds()
 
     def setObjectiveVector(self, c: ArrayLike) -> None:
         """
@@ -347,6 +375,9 @@ class Model:
         # commit
         self._A = _readonly_matrix(A)
         self.num_constrs = m
+        # drop a dual warm start that no longer matches the row count
+        if self._dual_start is not None and self._dual_start.size != m:
+            self._dual_start = None
         # clear cached solution
         self._clear_solution_cache()
 
@@ -511,6 +542,8 @@ class Model:
                 raise ValueError(f"Parameter '{key}' must be positive.")
             if key not in _POSITIVE_INT_PARAMS and value < 0:
                 raise ValueError(f"Parameter '{key}' must be nonnegative.")
+            if value > _INT32_MAX:
+                raise ValueError(f"Parameter '{key}' must not exceed {_INT32_MAX} (int32 range).")
             return value
 
         if key in _FLOAT_PARAMS:
@@ -552,7 +585,7 @@ class Model:
         """
         # resolve name and return
         key = self._resolve_param_key(name)
-        return self._params.get(key)
+        return self._params[key]
 
     def setParams(self, /, **kwargs) -> None:
         """
@@ -599,9 +632,9 @@ class Model:
         x = info.get("X")
         y = info.get("Pi")
         rc = info.get("RC")
-        self._x = np.asarray(x) if x is not None else None
-        self._y = np.asarray(y) if y is not None else None
-        self._rc = np.asarray(rc) if rc is not None else None
+        self._x = _readonly_array(np.asarray(x)) if x is not None else None
+        self._y = _readonly_array(np.asarray(y)) if y is not None else None
+        self._rc = _readonly_array(np.asarray(rc)) if rc is not None else None
         # objectives & gaps
         self._objval = info.get("PrimalObj")
         self._dualobj = info.get("DualObj")
@@ -803,8 +836,10 @@ class Model:
 
     @property
     def PrimalInfeas(self) -> Optional[float]:
+        """Alias of RelPrimalResidual (relative, not absolute infeasibility)."""
         return self._rel_p_res
 
     @property
     def DualInfeas(self) -> Optional[float]:
+        """Alias of RelDualResidual (relative, not absolute infeasibility)."""
         return self._rel_d_res
