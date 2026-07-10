@@ -111,6 +111,23 @@ def test_property_validation_errors(base_lp_data):
         model.ModelSense = 99
 
 
+def test_bound_nan_validation(base_lp_data):
+    model = _model(base_lp_data)
+    with pytest.raises(ValueError):
+        model.lb = [0.0, np.nan]
+    with pytest.raises(ValueError):
+        model.ub = [np.nan, 1.0]
+    with pytest.raises(ValueError):
+        model.constr_lb = [0.0, np.nan, -np.inf]
+    with pytest.raises(ValueError):
+        model.constr_ub = [0.0, 1.0, np.nan]
+
+    model.lb = [0.0, -np.inf]
+    model.ub = [np.inf, 1.0]
+    model.constr_lb = [5.0, -np.inf, -np.inf]
+    model.constr_ub = [5.0, np.inf, 8.0]
+
+
 def test_invalid_objective_assignment_preserves_previous_value(base_lp_data):
     model = _model(base_lp_data)
     original = model.c.copy()

@@ -98,6 +98,10 @@ def _require_finite(name: str, arr: np.ndarray) -> None:
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} must contain only finite values")
 
+def _require_no_nan(name: str, arr: np.ndarray) -> None:
+    if np.any(np.isnan(arr)):
+        raise ValueError(f"{name} must not contain NaN")
+
 def _check_bounds(lower: Optional[np.ndarray], upper: Optional[np.ndarray], name: str) -> None:
     if lower is not None and upper is not None and np.any(lower > upper):
         raise ValueError(f"{name}: lower bounds must be <= upper bounds")
@@ -351,6 +355,7 @@ class Model:
             raise ValueError(
                 f"setConstraintLowerBound: length {constr_lb_arr.size} != self.num_constrs ({self.num_constrs})"
             )
+        _require_no_nan("constraint_lower_bound", constr_lb_arr)
         self._constr_lb = _readonly_array(constr_lb_arr)
         # clear cached solution
         self._clear_solution_cache()
@@ -370,6 +375,7 @@ class Model:
             raise ValueError(
                 f"setConstraintUpperBound: length {constr_ub_arr.size} != self.num_constrs ({self.num_constrs})"
             )
+        _require_no_nan("constraint_upper_bound", constr_ub_arr)
         self._constr_ub = _readonly_array(constr_ub_arr)
         # clear cached solution
         self._clear_solution_cache()
@@ -389,6 +395,7 @@ class Model:
             raise ValueError(
                 f"setVariableLowerBound: length {lb_arr.size} != self.num_vars ({self.num_vars})"
             )
+        _require_no_nan("variable_lower_bound", lb_arr)
         self._lb = _readonly_array(lb_arr)
         # clear cached solution
         self._clear_solution_cache()
@@ -408,6 +415,7 @@ class Model:
             raise ValueError(
                 f"setVariableUpperBound: length {ub_arr.size} != self.num_vars ({self.num_vars})"
             )
+        _require_no_nan("variable_upper_bound", ub_arr)
         self._ub = _readonly_array(ub_arr)
         # clear cached solution
         self._clear_solution_cache()
