@@ -488,13 +488,25 @@ class Model:
 
     def _validate_param_value(self, key: str, value: Any) -> Any:
         if key in _BOOL_PARAMS:
-            if not isinstance(value, bool):
-                raise TypeError(f"Parameter '{key}' must be bool.")
-            return value
+            # accept a real bool, numpy bool, or an integer 0/1; store a Python bool
+            if isinstance(value, (bool, np.bool_)):
+                return bool(value)
+            if isinstance(value, (int, np.integer)):
+                if int(value) not in (0, 1):
+                    raise ValueError(f"Parameter '{key}' must be 0 or 1 when given as an int.")
+                return bool(value)
+            raise TypeError(f"Parameter '{key}' must be a bool (or 0/1).")
 
         if key in _INT_PARAMS:
-            if isinstance(value, bool) or not isinstance(value, int):
-                raise TypeError(f"Parameter '{key}' must be int.")
+            # accept any Python/numpy integer or an integer-valued float; store a Python int
+            if isinstance(value, (bool, np.bool_)):
+                raise TypeError(f"Parameter '{key}' must be an int.")
+            if isinstance(value, (int, np.integer)):
+                value = int(value)
+            elif isinstance(value, (float, np.floating)) and float(value).is_integer():
+                value = int(value)
+            else:
+                raise TypeError(f"Parameter '{key}' must be an int.")
             if key in _POSITIVE_INT_PARAMS and value <= 0:
                 raise ValueError(f"Parameter '{key}' must be positive.")
             if key not in _POSITIVE_INT_PARAMS and value < 0:
@@ -502,7 +514,10 @@ class Model:
             return value
 
         if key in _FLOAT_PARAMS:
-            if isinstance(value, bool):
+            # accept any real number (Python/numpy int or float); store a Python float
+            if isinstance(value, (bool, np.bool_)):
+                raise TypeError(f"Parameter '{key}' must be a number.")
+            if not isinstance(value, (int, float, np.integer, np.floating)):
                 raise TypeError(f"Parameter '{key}' must be a number.")
             value = float(value)
             if not np.isfinite(value):

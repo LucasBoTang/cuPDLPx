@@ -206,15 +206,37 @@ def test_set_params_is_transactional(base_lp_data):
 
 def test_param_value_validation(base_lp_data):
     model = _model(base_lp_data)
+    # float params accept ints and numpy numbers
     model.setParam("TimeLimit", 12)
     assert model.getParam("TimeLimit") == 12.0
+    model.setParam("TimeLimit", np.float64(30.0))
+    assert model.getParam("TimeLimit") == 30.0
     model.setParam("OptimalityNorm", "LINF")
     assert model.getParam("OptimalityNorm") == "linf"
 
+    # bool params accept real/numpy bools and 0/1 (coerced to a Python bool)
+    model.setParam("OutputFlag", 1)
+    assert model.getParam("OutputFlag") is True
+    model.setParam("OutputFlag", 0)
+    assert model.getParam("OutputFlag") is False
+    model.setParam("OutputFlag", np.bool_(True))
+    assert model.getParam("OutputFlag") is True
+
+    # int params accept numpy ints and integer-valued floats (coerced to a Python int)
+    model.setParam("IterationLimit", np.int64(1000))
+    assert model.getParam("IterationLimit") == 1000 and isinstance(model.getParam("IterationLimit"), int)
+    model.setParam("IterationLimit", 2000.0)
+    assert model.getParam("IterationLimit") == 2000
+
+    # still-invalid inputs
     with pytest.raises(TypeError):
-        model.setParam("OutputFlag", 1)
+        model.setParam("IterationLimit", False)   # bool is not an int here
     with pytest.raises(TypeError):
-        model.setParam("IterationLimit", False)
+        model.setParam("IterationLimit", 1.5)     # non-integer float
+    with pytest.raises(TypeError):
+        model.setParam("OutputFlag", "yes")       # string is not a bool
+    with pytest.raises(ValueError):
+        model.setParam("OutputFlag", 2)           # only 0/1 allowed as int
     with pytest.raises(ValueError):
         model.setParam("IterationLimit", -1)
     with pytest.raises(ValueError):
@@ -261,7 +283,7 @@ def test_set_params_value_validation_is_transactional(base_lp_data):
     model = _model(base_lp_data)
     old_time_limit = model.getParam("TimeLimit")
     with pytest.raises(TypeError):
-        model.setParams(TimeLimit=123.0, OutputFlag=1)
+        model.setParams(TimeLimit=123.0, OutputFlag="yes")  # OutputFlag invalid
     assert model.getParam("TimeLimit") == old_time_limit
 
 
