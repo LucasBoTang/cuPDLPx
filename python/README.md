@@ -174,7 +174,7 @@ Below is a list of commonly used parameters, their internal keys, and descriptio
 | `ReflectionCoeff` | `reflection_coefficient` | float | `1.0` | Reflection coefficient. |
 | `SVMaxIter` | `sv_max_iter` | int | 5000 | Maximum number of iterations for the power method |
 | `SVTol`| `sv_tol` | float | `1e-4` | Termination tolerance for the power method |
-| `Presolve`| `presolve` | float | `True` | Whether to use presolve. |
+| `Presolve`| `presolve` | bool | `True` | Whether to use presolve. |
 | `FeasibilityPolishing` | `feasibility_polishing` | bool | `False` | Run feasibility polishing process.|
 | `FeasibilityPolishingTol` | `eps_feas_polish_relative` | float | `1e-6` | Relative tolerance for primal/dual residual.  |
 
@@ -191,11 +191,14 @@ m.setParams(TimeLimit=300, FeasibilityTol=1e-6)
 # Method 3: attribute-style access
 m.Params.TimeLimit = 300
 m.Params.FeasibilityTol = 1e-6
+
+# Reset all parameters to backend defaults
+m.resetParams()
 ```
 
 ## Solution Attributes
 
-After calling `m.optimize()`, the solver stores results in a set of read-only attributes. These attributes provide access to primal/dual solutions, objective values, residuals, and runtime statistics.
+After calling `m.optimize()`, the solver stores results in a set of read-only attributes. `optimize()` returns the model itself, so chained access like `m.optimize().Status` is also supported. These attributes provide access to primal/dual solutions, objective values, residuals, and runtime statistics.
 
 ### Attribute Reference
 
