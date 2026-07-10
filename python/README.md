@@ -98,7 +98,7 @@ $$
 - **constraint_matrix** (`A`): Coefficient matrix for the constraints. Both dense (`numpy.ndarray`) and sparse (`scipy.sparse.csr_matrix`) inputs are supported. Internally stored in double precision (`float64`).
 - **constraint_lower_bound** (`l`): Lower bounds for each constraint. Use `-np.inf` or `None` for no lower bound.
 - **constraint_upper_bound** (`u`): Upper bounds for each constraint. Use `+np.inf` or `None` for no upper bound.
-- **variable_lower_bound** (`lb`, optional): Lower bounds for the decision variables. Defaults to `0` for all variables if not provided.
+- **variable_lower_bound** (`lb`, optional): Lower bounds for the decision variables. Defaults to `-np.inf` for all variables if not provided.
 - **variable_upper_bound** (`ub`, optional): Upper bounds for the decision variables. Defaults to `+np.inf` for all variables if not provided.
 - **objective_constant** (`c0`, optional): Constant offset in the objective function. Defaults to `0.0`.
 
@@ -268,7 +268,7 @@ m.setWarmStart(primal=x_init)
 m.setWarmStart(dual=pi_init)
 ```
 
-If the warm-start vectors have incorrect dimensions, the solver automatically falls back to a cold start and issues a warning.
+If the warm-start vectors have incorrect dimensions, `setWarmStart` raises a `ValueError`. Omitting an argument leaves that side unchanged; passing `None` clears it.
 
 To clear existing warm-start values:
 

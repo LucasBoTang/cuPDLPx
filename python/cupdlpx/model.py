@@ -346,12 +346,11 @@ class Model:
 
     def setWarmStart(self, primal: Optional[ArrayLike] = _UNSET, dual: Optional[ArrayLike] = _UNSET) -> None:
         """
-        Set, clear, or leave warm start values unchanged.
+        Set warm start values for the primal and/or dual solutions.
 
         For each of primal/dual: pass an array to set it, None to clear it, or
         omit the argument to leave the current value unchanged. Raises
-        ValueError on a size mismatch (previously only warned and kept the old
-        value, which could later fail inside the solver).
+        ValueError on a size mismatch.
         """
         # primal warm start
         if primal is not _UNSET:
